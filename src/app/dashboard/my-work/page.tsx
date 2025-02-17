@@ -20,12 +20,6 @@ const MyWorksManager = () => {
     console.log(projects);
   }, []);
 
-  const columns = [
-    { id: "name", label: "اسم المشروع" },
-    { id: "link", label: "رابط المشروع" },
-    { id: "imagePath", label: "صورة المشروع" },
-  ];
-
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
       setFile(e.target.files[0]);

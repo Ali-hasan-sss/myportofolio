@@ -22,6 +22,22 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "src/app/server/models/Skill.js",
+    "src/app/server/routes/aboutRoutes.js",
+    "src/app/server/index.js",
+    "src/app/server/models/Contact.js",
+    "src/app/server/models/Project.js",
+    "src/app/server/routes/skillRoutes.js",
+    "src/app/server/routes/projectRoutes.js",
+    "src/app/server/routes/contactRoutes.js",
+    "src/app/server/models/About.js",
+    "src/app/about",
+    "pages/api/messag.js"
+  ],
   "exclude": ["node_modules"]
 }

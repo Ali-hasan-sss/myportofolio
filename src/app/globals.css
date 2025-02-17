@@ -13,9 +13,16 @@
     --foreground: #ededed;
   }
 }
-
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  color: #fff;
+}
 body {
-  color: var(--foreground);
-  background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
+  transition: background-color 0.5s ease-in-out;
+}
+input {
+  color: #0a0a0a;
 }

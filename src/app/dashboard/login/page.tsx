@@ -1,5 +1,6 @@
 // components/LoginForm.tsx
 "use client";
+import { BASE_URL } from "@/app/api";
 import axios, { AxiosError } from "axios";
 import { useState } from "react";
 
@@ -12,7 +13,10 @@ export default function LoginForm() {
     e.preventDefault();
 
     try {
-      const response = await axios.post("/api/auth", { username, password });
+      const response = await axios.post(`${BASE_URL}auth`, {
+        username,
+        password,
+      });
 
       if (response.data.success) {
         const token = response.data.token;

@@ -2,6 +2,7 @@
 import NavBar from "@/components/header/navbar";
 import axios from "axios";
 import React, { useState } from "react";
+import { BASE_URL } from "../api";
 
 const ContactForm = () => {
   const [name, setName] = useState("");
@@ -22,7 +23,7 @@ const ContactForm = () => {
     try {
       setISloading(true);
       // إرسال البيانات إلى API باستخدام axios
-      const response = await axios.post("/api/messag", {
+      const response = await axios.post(`${BASE_URL}messag`, {
         name,
         email,
         message,

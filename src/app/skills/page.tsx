@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import NavBar from "../../components/header/navbar";
+import { BASE_URL } from "../api";
 interface skill {
   _id: string;
   imagePath: string;
@@ -15,7 +16,7 @@ export default function Skills() {
   useEffect(() => {
     const fetchSkills = async () => {
       try {
-        const response = await axios.get("/api/skills");
+        const response = await axios.get(`${BASE_URL}skills`);
         setSkills(response.data);
       } catch (error) {
         console.error("Error fetching skills", error);

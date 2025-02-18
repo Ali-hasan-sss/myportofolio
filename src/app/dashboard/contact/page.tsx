@@ -1,4 +1,5 @@
 "use client";
+import { BASE_URL } from "@/app/api";
 import axios from "axios";
 import { useEffect, useState } from "react";
 interface messag {
@@ -17,7 +18,7 @@ function AdminMessages() {
   useEffect(() => {
     const fetchMessages = async () => {
       try {
-        const response = await fetch("/api/messag");
+        const response = await fetch(`${BASE_URL}messag`);
         if (!response.ok) {
           throw new Error("فشل في جلب الرسائل");
         }
@@ -35,7 +36,7 @@ function AdminMessages() {
   }, []);
   const deleteMessage = async (messageId: string) => {
     try {
-      const response = await axios.delete(`/api/messag?id=${messageId}`);
+      const response = await axios.delete(`${BASE_URL}messag?id=${messageId}`);
       console.log("تم حذف الرسالة بنجاح", response.data);
       // هنا يمكن إضافة إعادة تحميل البيانات أو تحديث الواجهة بعد الحذف
     } catch (error) {

@@ -106,6 +106,9 @@ export default async function handler(req, res) {
       console.error("خطأ أثناء حذف الرسالة:", error);
       return res.status(500).json({ error: "خطأ في الخادم أثناء الحذف" });
     }
+  }
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
   } else {
     res.status(405).json({ error: "طريقة غير مدعومة" });
   }

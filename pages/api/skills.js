@@ -1,42 +1,29 @@
 import mongoose from "mongoose";
-import multer from "multer";
+import upload from "../../config/multer";
+import { cloudinary } from "../../config/cloudinary";
 
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, "public/images"); // حفظ الصور في مجلد 'public/images'
-    },
-    filename: (req, file, cb) => {
-      cb(null, Date.now() + "-" + file.originalname); // إنشاء اسم فريد للصورة
-    },
-  }),
-  limits: { fileSize: 5 * 1024 * 1024 }, // تحديد حجم الملف إلى 5MB كحد أقصى
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith("image/")) {
-      return cb(new Error("Only image files are allowed!"), false); // رفض الملفات غير الصور
-    }
-    cb(null, true); // قبول الملفات الصور
-  },
-}).fields([{ name: "image", maxCount: 1 }]);
-
+// تعريف مخطط Skill في Mongoose
 const SkillSchema = new mongoose.Schema({
   name: String,
-  imagePath: String,
+  imageUrl: String, // حفظ رابط الصورة بدل المسار المحلي
   proficiency: Number,
+  cloudinaryId: String, // لحذف الصورة عند تحديثها أو حذفها
 });
 
 const Skill = mongoose.models.Skill || mongoose.model("Skill", SkillSchema);
 
+// التأكد من الاتصال بـ MongoDB
 if (!mongoose.connection.readyState) {
   mongoose
     .connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
-    .then(() => console.log("Connected to MongoDB"))
+    .then(() => console.log("✅ Connected to MongoDB"))
     .catch((err) => {
-      console.error("Failed to connect to MongoDB", err);
+      console.error("❌ Failed to connect to MongoDB", err);
       throw err;
     });
 }
 
+// تعطيل BodyParser لاستخدام Multer
 export const config = {
   api: {
     bodyParser: false,
@@ -54,24 +41,27 @@ export default async function handler(req, res) {
       res.status(500).json({ message: err.message });
     }
   } else if (method === "POST") {
-    upload(req, res, async (err) => {
-      if (err) {
-        return res
-          .status(400)
-          .json({ message: err.message || "Invalid file upload" });
-      }
+    upload.single("image")(req, res, async (err) => {
+      if (err) return res.status(400).json({ message: err.message });
 
       const { name, proficiency } = req.body;
-      const { files } = req;
 
       if (!name || isNaN(proficiency)) {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
       try {
+        const image = req.file; // Multer يقوم بتخزين الصورة مؤقتًا
+
+        // رفع الصورة إلى Cloudinary مباشرة
+        const uploadedImage = await cloudinary.uploader.upload(image.path, {
+          folder: "skills",
+        });
+
         const newSkill = new Skill({
           name,
-          imagePath: files.image ? `/images/${files.image[0].filename}` : "",
+          imageUrl: uploadedImage.secure_url, // رابط Cloudinary الفعلي
+          cloudinaryId: uploadedImage.public_id, // معرف الصورة في Cloudinary
           proficiency: parseInt(proficiency, 10),
         });
 
@@ -82,15 +72,10 @@ export default async function handler(req, res) {
       }
     });
   } else if (method === "PUT") {
-    upload(req, res, async (err) => {
-      if (err) {
-        return res
-          .status(400)
-          .json({ message: err.message || "Invalid file upload" });
-      }
+    upload.single("image")(req, res, async (err) => {
+      if (err) return res.status(400).json({ message: err.message });
 
       const { id, name, proficiency } = req.body;
-      const { file } = req;
 
       if (!id || !name || isNaN(proficiency)) {
         return res.status(400).json({ message: "Invalid update data" });
@@ -102,11 +87,31 @@ export default async function handler(req, res) {
           return res.status(404).json({ message: "Skill not found" });
         }
 
+        // إذا كانت هناك صورة جديدة، احذف القديمة وارفع الجديدة
+        let imageUrl = skill.imageUrl;
+        let cloudinaryId = skill.cloudinaryId;
+
+        if (req.file) {
+          if (cloudinaryId) {
+            await cloudinary.uploader.destroy(cloudinaryId);
+          }
+
+          const uploadedImage = await cloudinary.uploader.upload(
+            req.file.path,
+            {
+              folder: "skills",
+            }
+          );
+
+          imageUrl = uploadedImage.secure_url;
+          cloudinaryId = uploadedImage.public_id;
+        }
+
+        // تحديث البيانات
         skill.name = name;
         skill.proficiency = parseInt(proficiency, 10);
-        if (file) {
-          skill.imagePath = `/images/${file.filename}`;
-        }
+        skill.imageUrl = imageUrl;
+        skill.cloudinaryId = cloudinaryId;
 
         await skill.save();
         res.status(200).json(skill);
@@ -122,6 +127,16 @@ export default async function handler(req, res) {
     }
 
     try {
+      const skill = await Skill.findById(id);
+      if (!skill) {
+        return res.status(404).json({ message: "Skill not found" });
+      }
+
+      // حذف الصورة من Cloudinary إذا كانت موجودة
+      if (skill.cloudinaryId) {
+        await cloudinary.uploader.destroy(skill.cloudinaryId);
+      }
+
       await Skill.findByIdAndDelete(id);
       res.status(200).json({ message: "Skill deleted successfully" });
     } catch (err) {

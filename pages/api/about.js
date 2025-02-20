@@ -1,15 +1,21 @@
 import mongoose from "mongoose";
 import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+import streamifier from "streamifier";
 
-// Configure multer to handle file uploads
-const upload = multer({
-  storage: multer.memoryStorage(), // Store files in memory
-  limits: { fileSize: 5 * 1024 * 1024 }, // Limit file size to 5MB
+// إعداد Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Define the About model
+// إعداد multer لتخزين الملفات مؤقتًا في الذاكرة
+const upload = multer({ storage: multer.memoryStorage() });
+
+// تعريف الـ Schema لقاعدة البيانات
 const AboutSchema = new mongoose.Schema({
-  image: String, // Store image as Base64 string
+  image: String, // رابط الصورة من Cloudinary
   name: String,
   education: String,
   profession: String,
@@ -28,22 +34,36 @@ try {
   console.log(error);
 }
 
-// Connect to MongoDB if not connected
+// التأكد من الاتصال بقاعدة البيانات
 if (!mongoose.connection.readyState) {
   mongoose
     .connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
-    .then(() => console.log("Connected to MongoDB"))
+    .then(() => console.log("✅ Connected to MongoDB"))
     .catch((err) => {
-      console.error("Failed to connect to MongoDB", err);
-      throw err; // Stop execution if connection fails
+      console.error("❌ Failed to connect to MongoDB", err);
+      throw err;
     });
 }
 
-// Disable default body parser because we use multer
+// تعطيل body parser الافتراضي بسبب استخدام multer
 export const config = {
   api: {
-    bodyParser: false, // Disable default body parser
+    bodyParser: false,
   },
+};
+
+// دالة لرفع الصورة إلى Cloudinary
+const uploadToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder: "about_images" }, // يمكنك تغيير اسم المجلد
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result.secure_url);
+      }
+    );
+    streamifier.createReadStream(buffer).pipe(stream);
+  });
 };
 
 export default async function handler(req, res) {
@@ -57,13 +77,12 @@ export default async function handler(req, res) {
       res.status(500).json({ message: err.message });
     }
   } else if (method === "POST") {
-    // Use multer middleware to handle file uploads
     upload.single("image")(req, res, async (err) => {
       if (err) {
-        return res.status(400).json({ message: "Invalid file upload" });
+        return res.status(400).json({ message: "خطأ في رفع الصورة" });
       }
 
-      const { file } = req; // Get uploaded file
+      const { file } = req;
       const {
         name,
         description,
@@ -77,12 +96,15 @@ export default async function handler(req, res) {
 
       try {
         let existingAbout = await About.findOne();
+        let imageUrl = existingAbout?.image; // الاحتفاظ بالصورة القديمة في حالة عدم وجود صورة جديدة
+
+        if (file) {
+          imageUrl = await uploadToCloudinary(file.buffer); // رفع الصورة إلى Cloudinary
+        }
 
         if (existingAbout) {
-          // Update existing record
-          if (file) {
-            existingAbout.image = file.buffer.toString("base64"); // Convert file to Base64
-          }
+          // تعديل البيانات الحالية
+          existingAbout.image = imageUrl;
           existingAbout.name = name || existingAbout.name;
           existingAbout.description = description || existingAbout.description;
           existingAbout.education = education || existingAbout.education;
@@ -92,12 +114,13 @@ export default async function handler(req, res) {
           existingAbout.date_of_birth =
             date_of_birth || existingAbout.date_of_birth;
           existingAbout.profession = profession || existingAbout.profession;
+
           await existingAbout.save();
           res.status(200).json(existingAbout);
         } else {
-          // Create new record
+          // إنشاء سجل جديد
           const newAbout = new About({
-            image: file ? file.buffer.toString("base64") : "", // Convert file to Base64
+            image: imageUrl,
             name,
             description,
             education,
@@ -111,19 +134,19 @@ export default async function handler(req, res) {
           res.status(201).json(newAbout);
         }
       } catch (err) {
-        console.error("Error processing request:", err); // Log error for debugging
-        res.status(400).json({ message: err.message });
+        console.error("❌ خطأ أثناء معالجة الطلب:", err);
+        res.status(500).json({ message: "خطأ في الخادم أثناء الحفظ" });
       }
     });
   } else if (method === "DELETE") {
     try {
       await About.deleteMany();
-      res.status(200).json({ message: "All about data deleted" });
+      res.status(200).json({ message: "تم حذف جميع البيانات بنجاح" });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
   } else {
     res.setHeader("Allow", ["GET", "POST", "DELETE"]);
-    res.status(405).end(`Method ${method} Not Allowed`);
+    res.status(405).end(`الطريقة ${method} غير مدعومة`);
   }
 }

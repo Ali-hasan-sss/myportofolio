@@ -7,7 +7,7 @@ interface Skill {
   _id: string;
   name: string;
   proficiency: number;
-  imagePath?: string; // افترضنا أن الصورة تُخزن على المسار وليس على ملف
+  imageUrl?: string; // افترضنا أن الصورة تُخزن على المسار وليس على ملف
 }
 
 const SkillsManager = () => {
@@ -16,7 +16,7 @@ const SkillsManager = () => {
     _id: "",
     name: "",
     proficiency: 0,
-    imagePath: "",
+    imageUrl: "",
   });
   const [file, setFile] = useState<File | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -41,7 +41,7 @@ const SkillsManager = () => {
     await addSkill(formData);
     fetchSkills();
 
-    setNewSkill({ _id: "", name: "", proficiency: 0, imagePath: "" });
+    setNewSkill({ _id: "", name: "", proficiency: 0, imageUrl: "" });
     setFile(null);
     setIsModalOpen(false);
   };
@@ -119,7 +119,7 @@ const SkillsManager = () => {
                 <td className=" text-center px-4 py-2">{Skill.proficiency}</td>
                 <td className="  px-4 py-2">
                   <img
-                    src={Skill.imagePath || "/images/default.jpg"}
+                    src={Skill.imageUrl || "/images/default.jpg"}
                     alt={Skill.name}
                     className="w-12 h-12 object-cover mx-auto"
                   />

@@ -1,28 +1,18 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useEffect } from "react";
 import NavBar from "../../components/header/navbar";
-import { BASE_URL } from "../api";
+import useSkillsStore from "@/store/useSkillsStore";
 interface skill {
   _id: string;
-  imagePath: string;
+  imageUrl: string;
   name: string;
   proficiency: number;
 }
 export default function Skills() {
-  const [skills, setSkills] = useState([]);
+  const { skills, fetchSkills } = useSkillsStore();
 
   useEffect(() => {
-    const fetchSkills = async () => {
-      try {
-        const response = await axios.get(`${BASE_URL}skills`);
-        setSkills(response.data);
-      } catch (error) {
-        console.error("Error fetching skills", error);
-      }
-    };
-
     fetchSkills();
   }, []);
 
@@ -41,7 +31,7 @@ export default function Skills() {
           >
             {/* صورة المهارة */}
             <img
-              src={skill.imagePath || "/images/default.jpg"}
+              src={skill.imageUrl || "/images/default.jpg"}
               alt={skill.name}
               className="w-20 h-20 object-contain mx-auto mb-4"
             />

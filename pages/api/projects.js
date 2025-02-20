@@ -1,42 +1,36 @@
 import mongoose from "mongoose";
 import multer from "multer";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import { cloudinary } from "../../config/cloudinary"; // تأكد من ضبط Cloudinary بشكل صحيح
 
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, "public/images"); // حفظ الصور في مجلد 'public/images'
-    },
-    filename: (req, file, cb) => {
-      cb(null, Date.now() + "-" + file.originalname); // إنشاء اسم فريد للصورة
-    },
-  }),
-  limits: { fileSize: 5 * 1024 * 1024 }, // تحديد حجم الملف إلى 5MB كحد أقصى
-  fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith("image/")) {
-      return cb(new Error("Only image files are allowed!"), false); // رفض الملفات غير الصور
-    }
-    cb(null, true); // قبول الملفات الصور
+// ✅ ضبط التخزين في Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "portfolio_projects", // المجلد في Cloudinary
+    allowed_formats: ["jpg", "png", "jpeg"],
   },
-}).fields([{ name: "image", maxCount: 1 }]);
+});
+
+const upload = multer({ storage });
 
 const ProjectsSchema = new mongoose.Schema({
-  name: String,
-  imagePath: String,
-  link: String,
+  name: { type: String, required: true, trim: true },
+  imagePath: String, // رابط الصورة في Cloudinary
+  cloudinaryId: String, // معرف الصورة في Cloudinary لحذفها لاحقًا
+  link: { type: String, required: true, trim: true },
 });
 
 const Project =
   mongoose.models.Project || mongoose.model("Project", ProjectsSchema);
 
-if (!mongoose.connection.readyState) {
-  mongoose
-    .connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
-    .then(() => console.log("Connected to MongoDB"))
-    .catch((err) => {
-      console.error("Failed to connect to MongoDB", err);
-      throw err;
-    });
-}
+mongoose
+  .connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => {
+    console.error("Failed to connect to MongoDB", err);
+    throw err;
+  });
 
 export const config = {
   api: {
@@ -47,6 +41,7 @@ export const config = {
 export default async function handler(req, res) {
   const { method } = req;
 
+  // ✅ جلب جميع المشاريع
   if (method === "GET") {
     try {
       const projects = await Project.find();
@@ -54,8 +49,11 @@ export default async function handler(req, res) {
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
-  } else if (method === "POST") {
-    upload(req, res, async (err) => {
+  }
+
+  // ✅ إضافة مشروع جديد مع صورة
+  else if (method === "POST") {
+    upload.single("image")(req, res, async (err) => {
       if (err) {
         return res
           .status(400)
@@ -63,17 +61,16 @@ export default async function handler(req, res) {
       }
 
       const { name, link } = req.body;
-      const { files } = req;
-
-      if (!name || !link) {
+      if (!name?.trim() || !link?.trim()) {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
       try {
         const newProject = new Project({
-          name,
-          imagePath: files.image ? `/images/${files.image[0].filename}` : "",
-          link,
+          name: name.trim(),
+          imagePath: req.file ? req.file.path : "", // رابط الصورة في Cloudinary
+          cloudinaryId: req.file ? req.file.filename : "", // معرف الصورة في Cloudinary
+          link: link.trim(),
         });
 
         await newProject.save();
@@ -82,8 +79,11 @@ export default async function handler(req, res) {
         res.status(400).json({ message: err.message });
       }
     });
-  } else if (method === "PUT") {
-    upload(req, res, async (err) => {
+  }
+
+  // ✅ تعديل مشروع مع تحديث الصورة (مع حذف الصورة القديمة من Cloudinary)
+  else if (method === "PUT") {
+    upload.single("image")(req, res, async (err) => {
       if (err) {
         return res
           .status(400)
@@ -91,44 +91,63 @@ export default async function handler(req, res) {
       }
 
       const { id, name, link } = req.body;
-      const { file } = req;
-
-      if (!id || !name || !link) {
+      if (!id || !name?.trim() || !link?.trim()) {
         return res.status(400).json({ message: "Invalid update data" });
       }
 
       try {
         const project = await Project.findById(id);
         if (!project) {
-          return res.status(404).json({ message: "project not found" });
+          return res.status(404).json({ message: "Project not found" });
         }
 
-        project.name = name;
-        project.link = link;
-        if (file) {
-          skill.imagePath = `/images/${file.filename}`;
+        // ✅ حذف الصورة القديمة من Cloudinary إذا كانت موجودة
+        if (req.file && project.cloudinaryId) {
+          await cloudinary.uploader.destroy(project.cloudinaryId);
+        }
+
+        project.name = name.trim();
+        project.link = link.trim();
+        if (req.file) {
+          project.imagePath = req.file.path;
+          project.cloudinaryId = req.file.filename;
         }
 
         await project.save();
-        res.status(200).json(skill);
+        res.status(200).json(project);
       } catch (err) {
         res.status(400).json({ message: err.message });
       }
     });
-  } else if (method === "DELETE") {
-    const { id } = req.query;
+  }
 
+  // ✅ حذف مشروع مع حذف صورته من Cloudinary
+  else if (method === "DELETE") {
+    const { id } = req.query;
     if (!id) {
-      return res.status(400).json({ message: "Missing projects ID" });
+      return res.status(400).json({ message: "Missing project ID" });
     }
 
     try {
+      const project = await Project.findById(id);
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+
+      // ✅ حذف الصورة من Cloudinary إذا كانت موجودة
+      if (project.cloudinaryId) {
+        await cloudinary.uploader.destroy(project.cloudinaryId);
+      }
+
       await Project.findByIdAndDelete(id);
-      res.status(200).json({ message: "projects deleted successfully" });
+      res.status(200).json({ message: "Project deleted successfully" });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
-  } else {
+  }
+
+  // ❌ رفض أي طريقة غير مدعومة
+  else {
     res.setHeader("Allow", ["GET", "POST", "PUT", "DELETE"]);
     res.status(405).end(`Method ${method} Not Allowed`);
   }

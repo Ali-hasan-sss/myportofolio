@@ -14,7 +14,7 @@ const useSkillsStore = create((set) => ({
   },
   addSkill: async (skillData) => {
     try {
-      await axios.post("/api/skills", skillData, {
+      await axios.post(`${BASE_URL}skills`, skillData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
     } catch (error) {
@@ -23,7 +23,7 @@ const useSkillsStore = create((set) => ({
   },
   deleteSkill: async (id) => {
     try {
-      await axios.delete(`${BASE_URL}?id=${id}`);
+      await axios.delete(`${BASE_URL}skills?id=${id}`);
       set((state) => ({
         skills: state.skills.filter((skill) => skill._id !== id),
       }));

@@ -1,4 +1,3 @@
-// seed/seed.js
 require("dotenv").config();
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
@@ -25,27 +24,30 @@ mongoose
     process.exit(1); // Exit if connection fails
   });
 
-// Function to create a user
-async function createUser() {
+// Function to create a new user
+async function createUser(username, plainPassword) {
   try {
     // Check if the user already exists
-    const existingUser = await User.findOne({ username: "admin" });
+    const existingUser = await User.findOne({ username });
     if (existingUser) {
-      console.log("User already exists. Skipping creation.");
+      console.log(`User '${username}' already exists. Skipping creation.`);
       process.exit(0);
     }
 
     // Hash the password securely
-    const hashedPassword = await bcrypt.hash("password123", 10);
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     // Create a new user
     const newUser = new User({
-      username: "admin",
+      username,
       password: hashedPassword,
     });
 
     await newUser.save();
-    console.log("User created successfully!");
+    console.log(`User '${username}' created successfully!`);
+    console.log(
+      `🔑 Credentials: \n  - Username: ${username} \n  - Password: ${plainPassword}`
+    );
     process.exit(0);
   } catch (err) {
     console.error("Error creating user:", err);
@@ -55,5 +57,6 @@ async function createUser() {
 
 // Call the function after connecting to MongoDB
 mongoose.connection.once("open", () => {
-  createUser();
+  // تغيير اسم المستخدم وكلمة المرور هنا
+  createUser("admin1", "12345678");
 });

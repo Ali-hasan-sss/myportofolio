@@ -3,7 +3,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { BASE_URL } from "../../api";
-import { isAuthorized } from "@/utils/auth";
 interface AboutData {
   image: string;
   name: string;
@@ -17,11 +16,6 @@ interface AboutData {
 }
 
 export default function About() {
-  useEffect(() => {
-    if (!isAuthorized()) {
-      window.location.href = "/dashboard/login"; // Redirect to login if not authorized
-    }
-  }, []);
   const [aboutData, setAboutData] = useState<AboutData | null>(null);
   const [loading, setLoading] = useState(true); // State للتحميل
   const [isEditing, setIsEditing] = useState(false); // State لوضع التعديل

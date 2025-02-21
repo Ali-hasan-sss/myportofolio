@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect } from "react";
-import NavBar from "../../components/header/navbar";
 import useSkillsStore from "@/store/useSkillsStore";
 interface skill {
   _id: string;
@@ -18,9 +17,8 @@ export default function Skills() {
 
   return (
     <div className="min-h-screen mx-auto px-4">
-      <NavBar />
       <h1 className="text-3xl text-white font-bold mb-6 text-center">
-        مهاراتي
+        My <span className="text-red-500"> Skills</span>
       </h1>
 
       <div className="flex flex-wrap items-center justify-center gap-6">

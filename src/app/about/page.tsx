@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { BASE_URL } from "../api";
 import axios from "axios";
-import NavBar from "@/components/header/navbar";
+import Loader from "@/components/loader";
 interface About {
   image: string;
   name: string;
@@ -45,13 +46,8 @@ export default function About() {
   }, []);
   return (
     <div className=" mx-auto ">
-      <NavBar />
       {/* Loading State */}
-      {loading && (
-        <div className="text-center py-8">
-          <p className="text-gray-600 text-lg">Loading...</p>
-        </div>
-      )}
+      {loading && <Loader />}
 
       {/* Error State */}
       {error && (
@@ -63,65 +59,90 @@ export default function About() {
       {/* Data Display or Edit Form */}
       {!loading && !error && aboutData && (
         <>
-          <section className=" min-h-screen text-white  p-6">
-            <div className=" items-center justify-center mb-4 flex md:hidden">
+          <h1 className="text-3xl text-white font-bold mb-6 text-center">
+            About <span className="text-red-500"> Me</span>
+          </h1>
+
+          <section className="min-h-screen text-white p-6 flex flex-col items-center">
+            {/* صورة الموبايل */}
+            <motion.div
+              initial={{ y: 100, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+              className="flex md:hidden justify-center mb-6"
+            >
               {aboutData.image && (
                 <img
-                  src={`data:image/jpeg;base64,${aboutData.image}`}
+                  src={aboutData.image}
                   alt="Profile"
-                  className="w-[400px] h-[400px]  object-cover"
+                  className="w-[300px] h-[300px] object-cover rounded-lg"
                 />
               )}
-            </div>
-            {/* Display Image */}
-            <div className="flex items-center justify-between gap-4 px-[50px] py-[30px]">
-              <div className=" items-center justify-center mb-4 hidden md:flex">
+            </motion.div>
+
+            {/* المحتوى الأساسي */}
+            <div className="max-w-[1200px]  w-full flex flex-col md:flex-row items-center  justify-between gap-6 px-6">
+              {/* صورة اللابتوب */}
+              <motion.div
+                initial={{ y: 100, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
+                className="hidden md:flex justify-center"
+              >
                 {aboutData.image && (
                   <img
-                    src={`data:image/jpeg;base64,${aboutData.image}`}
+                    src={aboutData.image}
                     alt="Profile"
-                    className="w-[400px] h-[400px]  object-cover"
+                    className="w-[400px] h-[400px] object-cover rounded-lg"
                   />
                 )}
-              </div>
+              </motion.div>
 
-              <div className="flex flex-col items-start">
-                <h1 className="text-xl  text-center font-bold mb-4">
-                  Name :
+              {/* المعلومات النصية */}
+              <motion.div
+                initial={{ x: 100, opacity: 0 }}
+                whileInView={{ x: 0, opacity: 1 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
+                className="flex flex-col   text-white items-center md:items-start text-center md:text-left"
+              >
+                <h1 className="text-xl font-bold mb-4">
+                  Name:{" "}
                   <span className="text-red-500 text-2xl">
                     {aboutData.name}
                   </span>
                 </h1>
-                <h2 className="text-xl  text-center font-bold mb-4">
+                <h2 className="text-xl font-bold mb-4">
                   Profession:
                   <span className="text-red-500"> {aboutData.profession}</span>
                 </h2>
-                <h2 className="text-xl  text-center font-bold mb-4">
-                  Education :
+                <h2 className="text-xl font-bold mb-4">
+                  Education:
                   <span className="text-red-500"> {aboutData.education} </span>
                 </h2>
-
-                <h2 className="text-2xl text-center font-bold mb-4">
-                  Phone:
-                  <span className="text-red-500"> {aboutData.phoneNo}</span>
+                <h2 className="text-xl font-bold mb-4">
+                  Phone:{" "}
+                  <span className="text-red-500">{aboutData.phoneNo}</span>
                 </h2>
-                <h2 className="text-2xl  text-center font-bold mb-4">
-                  Email:
-                  <span className="text-red-500"> {aboutData.email}</span>
+                <h2 className="text-xl font-bold mb-4">
+                  Email: <span className="text-red-500">{aboutData.email}</span>
                 </h2>
-                <h2 className="text-2xl  text-center font-bold mb-4">
-                  Adress:
-                  <span className="text-red-500"> {aboutData.adress}</span>
+                <h2 className="text-xl font-bold mb-4">
+                  Address:{" "}
+                  <span className="text-red-500">{aboutData.adress}</span>
                 </h2>
 
-                {/* Display Description */}
-                <p className=" text-xl ">
-                  <span className="text-red-500 font-bold mr-2 mb-4 text-2xl">
-                    About me:
+                {/* وصف عني */}
+                <p className="text-xl">
+                  About
+                  <span className="text-red-500 font-bold mr-2 text-2xl">
+                    me:
                   </span>
                   {aboutData.description}
                 </p>
-              </div>
+              </motion.div>
             </div>
           </section>
         </>

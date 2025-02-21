@@ -1,5 +1,4 @@
 "use client";
-import NavBar from "@/components/header/navbar";
 import axios from "axios";
 import React, { useState } from "react";
 import { BASE_URL } from "../api";
@@ -46,11 +45,10 @@ const ContactForm = () => {
   };
 
   return (
-    <>
-      <NavBar />
+    <div className=" min-h-screen flex items-center justify-center">
       <div className="container mx-auto p-4 max-w-lg">
         <h1 className="text-3xl font-bold mb-6 text-center text-blue-600">
-          اتصل بنا
+          Cuntact <span className="text-red-500"> Me</span>
         </h1>
         <form
           onSubmit={handleSubmit}
@@ -92,7 +90,7 @@ const ContactForm = () => {
         </form>
         {status && <p className="mt-4 text-center text-red-500">{status}</p>}
       </div>
-    </>
+    </div>
   );
 };
 

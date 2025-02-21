@@ -1,14 +1,15 @@
 "use client";
-import { usePathname } from "next/navigation";
 import ThemeSwitcher from "../ThemeSwitcher";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RiMenu3Fill } from "react-icons/ri";
 
 export default function NavBar() {
-  const pathName = usePathname();
+  const [pathName, setPathName] = useState<string | null>(null);
   const [IsOpen, setIsOpen] = useState(false);
-
+  useEffect(() => {
+    setPathName(window.location.pathname); // يتم التحديث بعد تحميل الصفحة
+  }, []);
   const navItems = [
     { label: "Home", link: "/" },
     { label: "About", link: "/about" },
@@ -20,7 +21,7 @@ export default function NavBar() {
   return (
     <>
       {/* ✅ Navbar ثابت في الأعلى */}
-      <div className="fixed top-0 left-0 w-full bg-gray-900/90 backdrop-blur-md shadow-lg z-50">
+      <div className="fixed top-0 left-0 w-full  backdrop-blur-md shadow-sm z-50">
         <div className="px-4 md:px-12 py-4 flex items-center justify-between">
           <h1 className="font-bold text-3xl text-white">
             Ali <span className="text-red-600">Hasan</span>
@@ -67,24 +68,27 @@ export default function NavBar() {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
-            className="fixed top-0 right-0 w-3/4 max-w-[300px] h-full bg-gray-800 text-white shadow-lg z-50 p-6 flex flex-col"
+            className="fixed top-20  backdrop-blur-md right-0 w-full text-white shadow-lg  p-6 flex flex-col"
           >
-            {/* زر الإغلاق */}
-            <button
-              className="self-end text-2xl mb-6 text-red-500 hover:text-red-700"
-              onClick={() => setIsOpen(false)}
-            >
-              ✕
-            </button>
+            {/* ✅ مبدّل الثيم داخل القائمة الجانبية */}
+            <div className="flex items-center justify-between">
+              <ThemeSwitcher />
+              <button
+                className="self-end text-2xl mb-6 text-red-500 hover:text-red-700"
+                onClick={() => setIsOpen(false)}
+              >
+                ✕
+              </button>
+            </div>
 
             {/* روابط القائمة الجانبية */}
-            <ul className="flex flex-col space-y-4 text-lg">
+            <ul className="flex flex-col backdrop-blur-md w-full space-y-4 text-lg">
               {navItems.map((item, index) => (
                 <li key={index}>
                   <a
                     href={item.link}
-                    className={`block py-2 px-4 rounded-md hover:bg-red-600 transition ${
-                      pathName === item.link ? "bg-red-500" : "bg-gray-700"
+                    className={`block py-2 px-4 text-center rounded-md hover:bg-red-600 transition ${
+                      pathName === item.link ? "bg-red-500" : ""
                     }`}
                   >
                     {item.label}
@@ -92,11 +96,6 @@ export default function NavBar() {
                 </li>
               ))}
             </ul>
-
-            {/* ✅ مبدّل الثيم داخل القائمة الجانبية */}
-            <div className="mt-auto">
-              <ThemeSwitcher />
-            </div>
           </motion.div>
         )}
       </AnimatePresence>

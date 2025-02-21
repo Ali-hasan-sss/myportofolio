@@ -50,13 +50,7 @@ export default function ThemeSwitcher({ className }: ThemeSwitcherProops) {
         <button
           onClick={toggleDropdown}
           className=" text-white rounded-full   w-[20px] h-[20px] bg-red-400"
-        >
-          <img
-            src="images/color.webp"
-            className="rounded-full w-[20px] h-[20px] object-center"
-            alt=""
-          />
-        </button>
+        ></button>
 
         {/* القائمة المنسدلة بجانب الزر مع أنيميشن */}
         <motion.div

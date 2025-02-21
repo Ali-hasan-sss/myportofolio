@@ -58,5 +58,5 @@ async function createUser(username, plainPassword) {
 // Call the function after connecting to MongoDB
 mongoose.connection.once("open", () => {
   // تغيير اسم المستخدم وكلمة المرور هنا
-  createUser("admin1", "12345678");
+  createUser("alihasan", "1992");
 });

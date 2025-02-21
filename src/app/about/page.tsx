@@ -45,6 +45,7 @@ export default function About() {
   }, []);
   return (
     <div className=" mx-auto ">
+      <NavBar />
       {/* Loading State */}
       {loading && (
         <div className="text-center py-8">
@@ -62,7 +63,6 @@ export default function About() {
       {/* Data Display or Edit Form */}
       {!loading && !error && aboutData && (
         <>
-          <NavBar />
           <section className=" min-h-screen text-white  p-6">
             <div className=" items-center justify-center mb-4 flex md:hidden">
               {aboutData.image && (

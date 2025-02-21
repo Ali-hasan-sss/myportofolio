@@ -125,6 +125,7 @@ export default function About() {
 
   return (
     <div className="max-w-4xl mx-auto p-4">
+      <button onClick={() => setIsEditing(true)}>edit</button>
       {/* Loading State */}
       {loading && (
         <div className="text-center py-8">
@@ -138,252 +139,239 @@ export default function About() {
           <p>{error}</p>
         </div>
       )}
+      {isEditing && (
+        <form
+          onSubmit={handleSubmit}
+          className="bg-gray-900 text-white shadow-md rounded-lg p-6 mt-4"
+        >
+          <h1 className="text-2xl font-bold mb-4">Edit About Information</h1>
 
+          {/* Image Upload */}
+          <div>
+            <label htmlFor="image" className="block text-sm font-medium">
+              Upload Image:
+            </label>
+            <input
+              type="file"
+              id="image"
+              name="image"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setNewAboutData((prev) => ({ ...prev, image: file }));
+                }
+              }}
+              className="mt-1 block w-full"
+            />
+          </div>
+
+          {/* Title Input */}
+          <div className="mt-4">
+            <label htmlFor="name" className="block text-sm font-medium">
+              name:
+            </label>
+            <input
+              type="text"
+              id="name"
+              name="name"
+              value={newAboutData.name}
+              onChange={(e) =>
+                setNewAboutData({ ...newAboutData, name: e.target.value })
+              }
+              className="w-full p-2 border rounded"
+            />
+          </div>
+          <div className="mt-4">
+            <label htmlFor="profession" className="block text-sm font-medium">
+              profession:
+            </label>
+            <input
+              type="text"
+              id="profession"
+              name="profession"
+              value={newAboutData.profession}
+              onChange={(e) =>
+                setNewAboutData({
+                  ...newAboutData,
+                  profession: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded"
+            />
+          </div>
+
+          <div className="mt-4">
+            <label htmlFor="education" className="block text-sm font-medium">
+              education:
+            </label>
+            <input
+              type="text"
+              id="education"
+              name="education"
+              value={newAboutData.education}
+              onChange={(e) =>
+                setNewAboutData({
+                  ...newAboutData,
+                  education: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded"
+            />
+          </div>
+          <div className="mt-4">
+            <label htmlFor="phoneNo" className="block text-sm font-medium">
+              phoneNo:
+            </label>
+            <input
+              type="text"
+              id="phoneNo"
+              name="phoneNo"
+              value={newAboutData.phoneNo}
+              onChange={(e) =>
+                setNewAboutData({
+                  ...newAboutData,
+                  phoneNo: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded"
+            />
+          </div>
+          <div className="mt-4">
+            <label htmlFor="email" className="block text-sm font-medium">
+              email:
+            </label>
+            <input
+              type="text"
+              id="email"
+              name="email"
+              value={newAboutData.email}
+              onChange={(e) =>
+                setNewAboutData({
+                  ...newAboutData,
+                  email: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded"
+            />
+          </div>
+          <div className="mt-4">
+            <label htmlFor="adress" className="block text-sm font-medium">
+              adress:
+            </label>
+            <input
+              type="text"
+              id="adress"
+              name="adress"
+              value={newAboutData.adress}
+              onChange={(e) =>
+                setNewAboutData({
+                  ...newAboutData,
+                  adress: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded"
+            />
+          </div>
+          <div className="mt-4">
+            <label
+              htmlFor="date_of_birth"
+              className="block text-sm font-medium"
+            >
+              date of birth:
+            </label>
+            <input
+              type="text"
+              id="date_of_birth"
+              name="date_of_birth"
+              value={newAboutData.date_of_birth}
+              onChange={(e) =>
+                setNewAboutData({
+                  ...newAboutData,
+                  date_of_birth: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded"
+            />
+          </div>
+
+          {/* Description Input */}
+          <div className="mt-4">
+            <label htmlFor="description" className="block text-sm font-medium">
+              Description:
+            </label>
+            <textarea
+              id="description"
+              name="description"
+              value={newAboutData.description}
+              onChange={(e) =>
+                setNewAboutData({
+                  ...newAboutData,
+                  description: e.target.value,
+                })
+              }
+              className="w-full p-2 border rounded"
+            />
+          </div>
+
+          {/* Submit and Cancel Buttons */}
+          <div className="flex justify-end mt-4 space-x-2">
+            <button
+              type="submit"
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            >
+              Save Changes
+            </button>
+            <button
+              onClick={() => setIsEditing(false)}
+              className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
       {/* Data Display or Edit Form */}
       {!loading && !error && aboutData && (
         <>
-          {isEditing ? (
-            <form
-              onSubmit={handleSubmit}
-              className="bg-gray-900 text-white shadow-md rounded-lg p-6 mt-4"
-            >
-              <h1 className="text-2xl font-bold mb-4">
-                Edit About Information
+          <section className=" shadow-md rounded-lg bg-gray-800 p-6 text-white mt-4">
+            {/* Display Image */}
+            <div className="flex items-center justify-center mb-4">
+              {aboutData.image && (
+                <img
+                  src={aboutData.image}
+                  alt="Profile"
+                  className="w-40 h-40  object-cover"
+                />
+              )}
+            </div>
+            <div className="flex flex-col items-senter justify-center w-full">
+              <h1 className="text-2xl text-center font-bold mb-2">
+                {aboutData.name}
               </h1>
+              <h2 className="text-xl text-center ">{aboutData.profession}</h2>
+            </div>
 
-              {/* Image Upload */}
-              <div>
-                <label htmlFor="image" className="block text-sm font-medium">
-                  Upload Image:
-                </label>
-                <input
-                  type="file"
-                  id="image"
-                  name="image"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      setNewAboutData((prev) => ({ ...prev, image: file }));
-                    }
-                  }}
-                  className="mt-1 block w-full"
-                />
-              </div>
+            {/* Display Description */}
+            <h2 className="text-lg font-bold ">
+              education: {aboutData.education}
+            </h2>
+            <p>phoneNo: {aboutData.phoneNo}</p>
+            <p>email: {aboutData.email}</p>
+            <p>date of birth: {aboutData.date_of_birth}</p>
+            <p>description: {aboutData.description}</p>
 
-              {/* Title Input */}
-              <div className="mt-4">
-                <label htmlFor="name" className="block text-sm font-medium">
-                  name:
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={newAboutData.name}
-                  onChange={(e) =>
-                    setNewAboutData({ ...newAboutData, name: e.target.value })
-                  }
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mt-4">
-                <label
-                  htmlFor="profession"
-                  className="block text-sm font-medium"
-                >
-                  profession:
-                </label>
-                <input
-                  type="text"
-                  id="profession"
-                  name="profession"
-                  value={newAboutData.profession}
-                  onChange={(e) =>
-                    setNewAboutData({
-                      ...newAboutData,
-                      profession: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-
-              <div className="mt-4">
-                <label
-                  htmlFor="education"
-                  className="block text-sm font-medium"
-                >
-                  education:
-                </label>
-                <input
-                  type="text"
-                  id="education"
-                  name="education"
-                  value={newAboutData.education}
-                  onChange={(e) =>
-                    setNewAboutData({
-                      ...newAboutData,
-                      education: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mt-4">
-                <label htmlFor="phoneNo" className="block text-sm font-medium">
-                  phoneNo:
-                </label>
-                <input
-                  type="text"
-                  id="phoneNo"
-                  name="phoneNo"
-                  value={newAboutData.phoneNo}
-                  onChange={(e) =>
-                    setNewAboutData({
-                      ...newAboutData,
-                      phoneNo: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mt-4">
-                <label htmlFor="email" className="block text-sm font-medium">
-                  email:
-                </label>
-                <input
-                  type="text"
-                  id="email"
-                  name="email"
-                  value={newAboutData.email}
-                  onChange={(e) =>
-                    setNewAboutData({
-                      ...newAboutData,
-                      email: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mt-4">
-                <label htmlFor="adress" className="block text-sm font-medium">
-                  adress:
-                </label>
-                <input
-                  type="text"
-                  id="adress"
-                  name="adress"
-                  value={newAboutData.adress}
-                  onChange={(e) =>
-                    setNewAboutData({
-                      ...newAboutData,
-                      adress: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-              <div className="mt-4">
-                <label
-                  htmlFor="date_of_birth"
-                  className="block text-sm font-medium"
-                >
-                  date of birth:
-                </label>
-                <input
-                  type="text"
-                  id="date_of_birth"
-                  name="date_of_birth"
-                  value={newAboutData.date_of_birth}
-                  onChange={(e) =>
-                    setNewAboutData({
-                      ...newAboutData,
-                      date_of_birth: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-
-              {/* Description Input */}
-              <div className="mt-4">
-                <label
-                  htmlFor="description"
-                  className="block text-sm font-medium"
-                >
-                  Description:
-                </label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={newAboutData.description}
-                  onChange={(e) =>
-                    setNewAboutData({
-                      ...newAboutData,
-                      description: e.target.value,
-                    })
-                  }
-                  className="w-full p-2 border rounded"
-                />
-              </div>
-
-              {/* Submit and Cancel Buttons */}
-              <div className="flex justify-end mt-4 space-x-2">
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Save Changes
-                </button>
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <section className=" shadow-md rounded-lg bg-gray-800 p-6 text-white mt-4">
-              {/* Display Image */}
-              <div className="flex items-center justify-center mb-4">
-                {aboutData.image && (
-                  <img
-                    src={`data:image/jpeg;base64,${aboutData.image}`}
-                    alt="Profile"
-                    className="w-40 h-40  object-cover"
-                  />
-                )}
-              </div>
-              <div className="flex flex-col items-senter justify-center w-full">
-                <h1 className="text-2xl text-center font-bold mb-2">
-                  {aboutData.name}
-                </h1>
-                <h2 className="text-xl text-center ">{aboutData.profession}</h2>
-              </div>
-
-              {/* Display Description */}
-              <h2 className="text-lg font-bold ">
-                education: {aboutData.education}
-              </h2>
-              <p>phoneNo: {aboutData.phoneNo}</p>
-              <p>email: {aboutData.email}</p>
-              <p>date of birth: {aboutData.date_of_birth}</p>
-              <p>description: {aboutData.description}</p>
-
-              {/* Edit Button */}
-              <button
-                onClick={() => {
-                  setIsEditing(true);
-                  setNewAboutData(aboutData); // Populate the form with current data
-                }}
-                className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-              >
-                Edit
-              </button>
-            </section>
-          )}
+            {/* Edit Button */}
+            <button
+              onClick={() => {
+                setIsEditing(true);
+                setNewAboutData(aboutData); // Populate the form with current data
+              }}
+              className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+            >
+              Edit
+            </button>
+          </section>
         </>
       )}
     </div>

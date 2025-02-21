@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 // Define the User model
 const UserSchema = new mongoose.Schema({
-  username: String,
-  password: String,
+  Username: String,
+  Password: String,
 });
 
 let User;
@@ -29,7 +29,10 @@ export default async function handler(req, res) {
     const { username, password } = req.body;
 
     try {
-      const user = await User.findOne({ username, password });
+      const user = await User.findOne({
+        Username: username,
+        Password: password,
+      });
 
       if (user) {
         const token = "your-secret-token"; // Replace with JWT or a secure token generator

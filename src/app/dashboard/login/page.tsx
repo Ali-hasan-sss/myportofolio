@@ -14,8 +14,8 @@ export default function LoginForm() {
 
     try {
       const response = await axios.post(`${BASE_URL}auth`, {
-        username,
-        password,
+        Username: username,
+        Password: password,
       });
 
       if (response.data.success) {

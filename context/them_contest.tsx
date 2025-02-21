@@ -9,7 +9,7 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [color, setColor] = useState<string>("#4f46e5"); // اللون الافتراضي
+  const [color, setColor] = useState<string>("#000000"); // اللون الافتراضي
 
   useEffect(() => {
     const storedColor = localStorage.getItem("themeColor");

@@ -1,100 +1,178 @@
-// pages/api/contact.js
 import mongoose from "mongoose";
+import upload from "../../config/multer";
+import { cloudinary } from "../../config/cloudinary";
 
-// Define the Contact model
+// تعريف مخطط SocialLink في Mongoose
 const ContactSchema = new mongoose.Schema({
-  phone: String,
-  email: String,
-  socialLinks: [String], // مصفوفة تحتوي على روابط التواصل الاجتماعي
+  socialLinks: [
+    {
+      iconUrl: String, // رابط الصورة من Cloudinary
+      cloudinaryId: String, // معرف الصورة في Cloudinary لحذفها عند التحديث أو الحذف
+      url: String, // رابط الحساب
+    },
+  ],
 });
 
-let Contact;
-try {
-  Contact = mongoose.model("Contact");
-} catch (error) {
-  Contact = mongoose.model("Contact", ContactSchema);
-  console.log(error);
-}
+const Contact =
+  mongoose.models.Contact || mongoose.model("Contact", ContactSchema);
 
-// Connect to MongoDB if not connected
+// التأكد من الاتصال بـ MongoDB
 if (!mongoose.connection.readyState) {
   mongoose
     .connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 5000 })
-    .then(() => console.log("Connected to MongoDB"))
+    .then(() => console.log("✅ Connected to MongoDB"))
     .catch((err) => {
-      console.error("Failed to connect to MongoDB", err);
-      throw err; // Stop execution if connection fails
+      console.error("❌ Failed to connect to MongoDB", err);
+      throw err;
     });
 }
+
+// تعطيل BodyParser لاستخدام Multer
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 export default async function handler(req, res) {
   const { method } = req;
 
   if (method === "GET") {
-    // Get all contact data
     try {
-      const contact = await Contact.find();
-      res.status(200).json(contact);
+      const contact = await Contact.findOne();
+      res.status(200).json(contact?.socialLinks || []);
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
   } else if (method === "POST") {
-    // Add or update contact data
-    const { phone, email, socialLinks } = req.body;
+    upload.single("icon")(req, res, async (err) => {
+      if (err) return res.status(400).json({ message: err.message });
 
-    try {
-      let existingContact = await Contact.findOne();
+      const { url } = req.body;
 
-      if (existingContact) {
-        // Update existing record
-        existingContact.phone = phone || existingContact.phone;
-        existingContact.email = email || existingContact.email;
-        existingContact.socialLinks =
-          socialLinks || existingContact.socialLinks;
-        await existingContact.save();
-        res.status(200).json(existingContact);
-      } else {
-        // Create new record
-        const newContact = new Contact({ phone, email, socialLinks });
-        await newContact.save();
-        res.status(201).json(newContact);
+      if (!url || !req.file) {
+        return res
+          .status(400)
+          .json({ message: "Both image and URL are required." });
       }
-    } catch (err) {
-      res.status(400).json({ message: err.message });
-    }
+
+      try {
+        // رفع الصورة إلى Cloudinary
+        const uploadedImage = await cloudinary.uploader.upload(req.file.path, {
+          folder: "social_icons",
+        });
+
+        let contact = await Contact.findOne();
+
+        if (!contact) {
+          contact = new Contact({ socialLinks: [] });
+        }
+
+        contact.socialLinks.push({
+          iconUrl: uploadedImage.secure_url,
+          cloudinaryId: uploadedImage.public_id,
+          url,
+        });
+
+        await contact.save();
+        res.status(201).json(contact.socialLinks);
+      } catch (uploadErr) {
+        res.status(500).json({ message: "Error uploading image" });
+        console.log(uploadErr);
+      }
+    });
   } else if (method === "PUT") {
-    // Update contact data by ID
-    const { id, phone, email, socialLinks } = req.body;
+    upload.single("icon")(req, res, async (err) => {
+      if (err) return res.status(400).json({ message: err.message });
 
-    try {
-      const contact = await Contact.findById(id);
+      const { oldUrl, newUrl } = req.body;
 
-      if (!contact) {
-        return res.status(404).json({ message: "Contact not found" });
+      if (!oldUrl || !newUrl) {
+        return res
+          .status(400)
+          .json({ message: "Both old URL and new URL are required." });
       }
 
-      // Update fields only if provided
-      if (phone !== undefined) contact.phone = phone;
-      if (email !== undefined) contact.email = email;
-      if (socialLinks !== undefined) contact.socialLinks = socialLinks;
+      try {
+        const contact = await Contact.findOne();
+        if (!contact)
+          return res.status(404).json({ message: "No social links found." });
 
-      await contact.save();
-      res.status(200).json(contact);
-    } catch (err) {
-      res.status(400).json({ message: err.message });
-    }
+        const linkIndex = contact.socialLinks.findIndex(
+          (link) => link.url === oldUrl
+        );
+        if (linkIndex === -1)
+          return res.status(404).json({ message: "Link not found." });
+
+        let imageUrl = contact.socialLinks[linkIndex].iconUrl;
+        let cloudinaryId = contact.socialLinks[linkIndex].cloudinaryId;
+
+        if (req.file) {
+          // حذف الصورة القديمة إذا كانت موجودة
+          if (cloudinaryId) {
+            await cloudinary.uploader.destroy(cloudinaryId);
+          }
+
+          // رفع الصورة الجديدة
+          const uploadedImage = await cloudinary.uploader.upload(
+            req.file.path,
+            {
+              folder: "social_icons",
+            }
+          );
+
+          imageUrl = uploadedImage.secure_url;
+          cloudinaryId = uploadedImage.public_id;
+        }
+
+        // تحديث الرابط والصورة الجديدة
+        contact.socialLinks[linkIndex].url = newUrl;
+        contact.socialLinks[linkIndex].iconUrl = imageUrl;
+        contact.socialLinks[linkIndex].cloudinaryId = cloudinaryId;
+
+        await contact.save();
+        res.status(200).json(contact.socialLinks);
+      } catch (err) {
+        res.status(500).json({ message: err.message });
+      }
+    });
   } else if (method === "DELETE") {
-    // Delete contact data by ID
     const { id } = req.query;
 
-    try {
-      const deletedContact = await Contact.findByIdAndDelete(id);
+    if (!id) {
+      return res.status(400).json({ message: "Missing social ID" });
+    }
 
-      if (!deletedContact) {
-        return res.status(404).json({ message: "Contact not found" });
+    try {
+      const contact = await Contact.findOne();
+      if (!contact) {
+        return res.status(404).json({ message: "No social links found." });
       }
 
-      res.status(200).json({ message: "Contact deleted successfully" });
+      // البحث عن الرابط في المصفوفة باستخدام ObjectId
+      const linkIndex = contact.socialLinks.findIndex((link) =>
+        link._id.equals(new mongoose.Types.ObjectId(id))
+      );
+
+      if (linkIndex === -1) {
+        return res.status(404).json({ message: "Link not found." });
+      }
+
+      const cloudinaryId = contact.socialLinks[linkIndex].cloudinaryId;
+
+      // حذف الصورة من Cloudinary إذا كانت موجودة
+      if (cloudinaryId) {
+        await cloudinary.uploader.destroy(cloudinaryId);
+      }
+
+      // إزالة الرابط من المصفوفة
+      contact.socialLinks.splice(linkIndex, 1);
+      await contact.save();
+
+      res.status(200).json({
+        message: "Deleted successfully",
+        socialLinks: contact.socialLinks,
+      });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }

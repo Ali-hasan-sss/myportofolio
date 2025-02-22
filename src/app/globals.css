@@ -26,3 +26,9 @@ body {
 input {
   color: #0a0a0a;
 }
+.social:hover {
+  scale: 1.2;
+}
+.social {
+  transition: 0.4s;
+}

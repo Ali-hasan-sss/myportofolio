@@ -16,14 +16,18 @@ export default function ServiceCard({
       <div className="card-container">
         <div className="card-face front-face">
           <img src={image} alt="me" />
-          <h2>{title}</h2>
+          <h2 className="text-white">{title}</h2>
           <h3>{des}</h3>
         </div>
         <div className="card-face back-face">
           <div className="continer-about">
-            <h2>Abut service:</h2>
-            <p>I can build a website by using HTML , CSS and Java script</p>
-            <a href={link} target="blank" className="text-xl font-bold">
+            <h2>Abut project:</h2>
+            <p>You can visit the website and showing My project..</p>
+            <a
+              href={link}
+              target="blank"
+              className="text-xl text-blue-400 font-bold"
+            >
               visit website
             </a>
           </div>

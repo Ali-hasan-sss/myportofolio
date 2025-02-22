@@ -45,25 +45,24 @@ export default function About() {
     fetchData();
   }, []);
   return (
-    <div className=" mx-auto ">
+    <div className=" mx-auto min-h-screen">
+      <h1 className="text-3xl text-white font-bold mb-6 text-center">
+        About <span className="text-red-500"> Me</span>
+      </h1>
       {/* Loading State */}
       {loading && <Loader />}
 
       {/* Error State */}
       {error && (
         <div className="text-center py-8 text-red-500">
-          <p>{error}</p>
+          <p className="text-red-500">تفقد اتصالك بالشبكة</p>
         </div>
       )}
 
       {/* Data Display or Edit Form */}
       {!loading && !error && aboutData && (
         <>
-          <h1 className="text-3xl text-white font-bold mb-6 text-center">
-            About <span className="text-red-500"> Me</span>
-          </h1>
-
-          <section className="min-h-screen text-white p-6 flex flex-col items-center">
+          <section className="min-h-screen py-[30px] text-white p-6 flex flex-col items-center">
             {/* صورة الموبايل */}
             <motion.div
               initial={{ y: 100, opacity: 0 }}
@@ -82,7 +81,7 @@ export default function About() {
             </motion.div>
 
             {/* المحتوى الأساسي */}
-            <div className="max-w-[1200px]  w-full flex flex-col md:flex-row items-center  justify-between gap-6 px-6">
+            <div className="max-w-[1200px] container px-[50px]  w-full flex flex-col md:flex-row items-center  justify-between gap-6 px-6">
               {/* صورة اللابتوب */}
               <motion.div
                 initial={{ y: 100, opacity: 0 }}
@@ -108,34 +107,34 @@ export default function About() {
                 viewport={{ once: true }}
                 className="flex flex-col   text-white items-center md:items-start text-center md:text-left"
               >
-                <h1 className="text-xl font-bold mb-4">
+                <h1 className="text-xl text-white font-bold mb-4">
                   Name:{" "}
                   <span className="text-red-500 text-2xl">
                     {aboutData.name}
                   </span>
                 </h1>
-                <h2 className="text-xl font-bold mb-4">
+                <h2 className="text-xl text-white font-bold mb-4">
                   Profession:
                   <span className="text-red-500"> {aboutData.profession}</span>
                 </h2>
-                <h2 className="text-xl font-bold mb-4">
+                <h2 className="text-xl text-white font-bold mb-4">
                   Education:
                   <span className="text-red-500"> {aboutData.education} </span>
                 </h2>
-                <h2 className="text-xl font-bold mb-4">
+                <h2 className="text-xl text-white font-bold mb-4">
                   Phone:{" "}
                   <span className="text-red-500">{aboutData.phoneNo}</span>
                 </h2>
-                <h2 className="text-xl font-bold mb-4">
+                <h2 className="text-xl text-white font-bold mb-4">
                   Email: <span className="text-red-500">{aboutData.email}</span>
                 </h2>
-                <h2 className="text-xl font-bold mb-4">
+                <h2 className="text-xl text-white font-bold mb-4">
                   Address:{" "}
                   <span className="text-red-500">{aboutData.adress}</span>
                 </h2>
 
                 {/* وصف عني */}
-                <p className="text-xl">
+                <p className="text-white max-w-[350px] text-xl break-words">
                   About
                   <span className="text-red-500 font-bold mr-2 text-2xl">
                     me:

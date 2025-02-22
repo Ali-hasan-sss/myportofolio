@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { motion } from "framer-motion"; // استيراد Framer Motion
 import useProjectsStore from "@/store/useMyWorksStore";
 import ServiceCard from "@/components/cards/serviceCard";
+import Loader from "@/components/loader";
 
 interface project {
   _id: string;
@@ -13,17 +14,17 @@ interface project {
 }
 
 export default function Mywork() {
-  const { projects, fetchProjects } = useProjectsStore();
+  const { projects, fetchProjects, loading } = useProjectsStore();
 
   useEffect(() => {
     fetchProjects();
   }, []);
-
   return (
     <div className="mx-auto min-h-screen">
       <h1 className="text-2xl text-white font-bold mb-4 text-center">
         My <span className="text-red-500"> Works</span>
       </h1>
+      {loading && <Loader />}
       <div className="flex flex-wrap items-center justify-center gap-6">
         {projects.map((project: project, index: number) => (
           <motion.div

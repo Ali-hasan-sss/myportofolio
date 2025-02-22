@@ -49,8 +49,11 @@ export default function ThemeSwitcher({ className }: ThemeSwitcherProops) {
         {/* زر تغيير اللون */}
         <button
           onClick={toggleDropdown}
-          className=" text-white rounded-full   w-[20px] h-[20px] bg-red-400"
-        ></button>
+          className=" text-white rounded-full shadow-lg w-[20px] h-[20px] bg-red-400"
+          style={{ boxShadow: "5px,5px,15px,#ffffff" }}
+        >
+          <img src="/images/colorSwitch.png" alt="" />
+        </button>
 
         {/* القائمة المنسدلة بجانب الزر مع أنيميشن */}
         <motion.div

@@ -6,9 +6,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="bg-black min-h-screen">
+    <div className=" flex justify-between min-h-screen">
       <DashboardNav />
-      {children}
+      <div
+        style={{ overflowY: "auto", maxHeight: "calc(100vh - 4rem)" }}
+        className="w-full"
+      >
+        {children}
+      </div>
     </div>
   );
 }

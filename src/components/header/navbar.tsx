@@ -68,10 +68,10 @@ export default function NavBar() {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
-            className="fixed top-20  backdrop-blur-md right-0 w-full text-white shadow-lg  p-6 flex flex-col"
+            className="fixed top-20  backdrop-blur-md right-0 w-full text-white shadow-lg z-50  p-6 flex flex-col"
           >
             {/* ✅ مبدّل الثيم داخل القائمة الجانبية */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between ">
               <ThemeSwitcher />
               <button
                 className="self-end text-2xl mb-6 text-red-500 hover:text-red-700"
@@ -82,7 +82,7 @@ export default function NavBar() {
             </div>
 
             {/* روابط القائمة الجانبية */}
-            <ul className="flex flex-col backdrop-blur-md w-full space-y-4 text-lg">
+            <ul className="flex flex-col backdrop-blur-md w-full space-y-4  text-lg">
               {navItems.map((item, index) => (
                 <li key={index}>
                   <a

@@ -81,7 +81,7 @@ export default function About() {
             </motion.div>
 
             {/* المحتوى الأساسي */}
-            <div className="max-w-[1200px] container px-[50px]  w-full flex flex-col md:flex-row items-center  justify-between gap-6 px-6">
+            <div className="max-w-[1200px]  px-[10px] md:px-[50px]  w-full flex flex-col md:flex-row items-center  justify-between gap-6 px-6">
               {/* صورة اللابتوب */}
               <motion.div
                 initial={{ y: 100, opacity: 0 }}
@@ -134,7 +134,7 @@ export default function About() {
                 </h2>
 
                 {/* وصف عني */}
-                <p className="text-white max-w-[350px] text-xl break-words">
+                <p className="text-white max-w-[400px] text-xl break-words">
                   About
                   <span className="text-red-500 font-bold mr-2 text-2xl">
                     me:

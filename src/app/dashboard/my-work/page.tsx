@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import useProjectsStore from "@/store/useMyWorksStore";
+import { toast } from "sonner";
 interface project {
   _id: string;
   imagePath: string;
@@ -42,12 +43,15 @@ const MyWorksManager = () => {
       setIsModalOpen(false);
     } catch (error) {
       console.error("Error adding project:", error);
-      alert("حدث خطأ أثناء إضافة المشروع.");
+      toast.error("حدث خطأ أثناء إضافة المشروع.");
     }
   };
 
   return (
-    <div className="container mx-auto p-4 rtl" style={{ direction: "rtl" }}>
+    <div
+      className="container w-full mx-auto p-4 rtl"
+      style={{ direction: "rtl" }}
+    >
       <h1 className="text-2xl font-bold mb-4">إدارة معرض الاعمال</h1>
       <button
         onClick={() => setIsModalOpen(true)}

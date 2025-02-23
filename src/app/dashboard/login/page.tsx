@@ -3,6 +3,7 @@
 import { BASE_URL } from "@/app/api";
 import axios, { AxiosError } from "axios";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export default function LoginForm() {
   const [username, setUsername] = useState("");
@@ -25,7 +26,7 @@ export default function LoginForm() {
         if (typeof window !== "undefined") {
           localStorage.setItem("authToken", token);
         }
-        alert("Login successful!");
+        toast.success("Login successful!");
         window.location.href = "/dashboard"; // Redirect to dashboard
       } else {
         setError("Invalid credentials");

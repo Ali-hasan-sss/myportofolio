@@ -47,7 +47,7 @@ const SkillsManager = () => {
   };
 
   return (
-    <div className="container mx-auto p-4" style={{ direction: "rtl" }}>
+    <div className="container mx-auto p-4 w-full" style={{ direction: "rtl" }}>
       <h1 className="text-2xl font-bold mb-4">إدارة المهارات</h1>
       <button
         onClick={() => setIsModalOpen(true)}
@@ -57,7 +57,7 @@ const SkillsManager = () => {
       </button>
 
       {isModalOpen ? (
-        <div>
+        <div className="fixed">
           <h2 className="text-xl font-bold mb-4">إضافة مهارة جديدة</h2>
           <form onSubmit={handleSubmit}>
             <input

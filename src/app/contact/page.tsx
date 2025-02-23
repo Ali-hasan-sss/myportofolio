@@ -65,7 +65,7 @@ const ContactForm = () => {
 
   return (
     <div className=" min-h-screen flex items-center w-full justify-center">
-      <div className="container  flex flex-col w-full items-center justify-center">
+      <div className="container  flex flex-col gap-[50px] w-full  justify-center">
         <h1 className="text-3xl font-bold mb-6 text-center text-blue-600">
           Contact <span className="text-red-500"> Me</span>
         </h1>

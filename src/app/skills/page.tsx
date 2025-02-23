@@ -18,7 +18,7 @@ export default function Skills() {
   }, []);
 
   return (
-    <div className="min-h-screen mx-auto px-4">
+    <div className="mx-auto min-h-screen overflow-hidden py-5">
       <h1 className="text-3xl text-white font-bold mb-6 text-center">
         My <span className="text-red-500"> Skills</span>
       </h1>

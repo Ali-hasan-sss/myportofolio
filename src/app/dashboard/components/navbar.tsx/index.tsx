@@ -11,11 +11,11 @@ export default function DashboardNav() {
     { label: "Contact", link: "/dashboard/contact" },
   ];
   return (
-    <div className="flex items-center justify-between px-[50px] py-4  bg-black">
-      <h1 className="font-bold text-3xl pt-2 text-white h-[40px]">
-        Ali <span className="text-red-600">Hasan</span>
-      </h1>
-      <ul className="flex space-x-5 text-xl">
+    <div
+      className="w-1/5 shadow-xl"
+      style={{ overflowY: "auto", maxHeight: "calc(100vh - 4rem)" }}
+    >
+      <ul className="flex  flex-col items-center space-y-5 overflow-Y-auto py-[50px]  text-xl">
         {navItems.map((item, index) => (
           <li key={index}>
             <a

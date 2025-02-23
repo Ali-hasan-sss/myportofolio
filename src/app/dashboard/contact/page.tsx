@@ -3,6 +3,7 @@ import { BASE_URL } from "@/app/api";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import useSocialMediaStore from "@/store/useSocialMediaStore";
+import { toast } from "sonner";
 
 interface Message {
   _id: string;
@@ -60,7 +61,7 @@ function AdminMessages() {
 
   const handleAdd = async () => {
     if (!selectedFile || !newLink) {
-      alert("الرجاء اختيار صورة وإدخال رابط الحساب!");
+      toast.warning("الرجاء اختيار صورة وإدخال رابط الحساب!");
       return;
     }
 
@@ -78,7 +79,7 @@ function AdminMessages() {
   }
 
   return (
-    <div style={{ direction: "rtl", padding: "20px 40px" }}>
+    <div style={{ direction: "rtl", padding: "20px 40px" }} className="w-full">
       <h2 className="text-2xl font-bold mb-4">الرسائل الواردة</h2>
 
       <table className="min-w-full bg-gray-800 rounded-xl shadow-md">

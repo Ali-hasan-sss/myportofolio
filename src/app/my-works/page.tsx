@@ -20,7 +20,7 @@ export default function Mywork() {
     fetchProjects();
   }, []);
   return (
-    <div className="mx-auto min-h-screen">
+    <div className="mx-auto min-h-screen overflow-hidden py-5">
       <h1 className="text-2xl text-white font-bold mb-4 text-center">
         My <span className="text-red-500"> Works</span>
       </h1>

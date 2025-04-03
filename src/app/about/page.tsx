@@ -21,7 +21,8 @@ interface About {
 
 export default function About() {
   const [aboutData, setAboutData] = useState<About | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [loadingCV, setLoadingCV] = useState(false);
   const [error, setError] = useState<string | null>(null); // State للأخطاء
 
   // جلب البيانات من API
@@ -48,20 +49,18 @@ export default function About() {
     fetchData();
   }, []);
   const downloadCV = async () => {
-    //console.log("aboutData:", aboutData); // رؤية القيم قبل الشرط
-
-    // التحقق مما إذا كان `aboutData` متاحًا ولديه `cvPath`
     if (!aboutData || !aboutData.cvPath) {
-      toast.error(" CV URL is missing or invalid!");
+      toast.error("CV URL is missing or invalid!");
       return;
     }
 
     const cvUrl = aboutData.cvPath;
 
     try {
+      setLoadingCV(true); // ⬅️ تفعيل اللودينغ قبل بدء التحميل
       console.log("📥 Fetching CV from:", cvUrl);
-      const response = await fetch(cvUrl);
 
+      const response = await fetch(cvUrl);
       if (!response.ok) {
         throw new Error(
           `❌ Failed to fetch CV: ${response.status} ${response.statusText}`
@@ -81,9 +80,15 @@ export default function About() {
       window.URL.revokeObjectURL(url);
 
       console.log("✅ CV Downloaded Successfully!");
+      toast.success("✅ تم تحميل السيرة الذاتية بنجاح!", {
+        position: "top-right",
+        style: { backgroundColor: "#4CAF50", color: "#fff", fontSize: "16px" }, // تخصيص الألوان
+      });
     } catch (error) {
       console.error("❌ Error downloading CV:", error);
+      toast.error("Failed to download CV.");
     } finally {
+      setLoadingCV(false); // ⬅️ إيقاف اللودينغ سواء نجح التحميل أم لا
     }
   };
 
@@ -95,11 +100,19 @@ export default function About() {
         </h1>
         <button
           onClick={downloadCV}
-          className="py-1 text-center mx-auto px-3 rounded border border-red-500"
+          className="py-1 text-center mx-auto px-3 rounded border border-red-500 flex items-center gap-3"
+          disabled={loadingCV} // ⬅️ تعطيل الزر أثناء التحميل لمنع النقر المتكرر
         >
-          <span className="flex items-center gap-3">
-            Download CV <FaDownload />
-          </span>
+          {loadingCV ? (
+            <span className="flex items-center gap-2">
+              <span className="animate-spin border-2 border-t-transparent border-red-500 rounded-full w-4 h-4"></span>
+              Loading...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2">
+              Download CV <FaDownload />
+            </span>
+          )}
         </button>
       </div>
       {/* Loading State */}

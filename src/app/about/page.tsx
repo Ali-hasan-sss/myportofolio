@@ -101,13 +101,9 @@ export default function About() {
           className="py-1 text-center mx-auto px-3 rounded border border-red-500"
           disabled={loadingCV}
         >
-          {loadingCV ? (
-            <Loader />
-          ) : (
-            <span className="flex items-center gap-3">
-              Download CV <FaDownload />
-            </span>
-          )}
+          <span className="flex items-center gap-3">
+            Download CV <FaDownload />
+          </span>
         </button>
       </div>
       {/* Loading State */}

@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { BASE_URL } from "../api";
 import axios from "axios";
 import Loader from "@/components/loader";
+import { toast } from "sonner";
+import { FaDownload } from "react-icons/fa";
 interface About {
   image: string;
   name: string;
@@ -14,11 +16,13 @@ interface About {
   adress: string;
   date_of_birth: string;
   description: string;
+  cvPath: string;
 }
 
 export default function About() {
   const [aboutData, setAboutData] = useState<About | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingCV, setLoadingCV] = useState(true);
   const [error, setError] = useState<string | null>(null); // State للأخطاء
 
   // جلب البيانات من API
@@ -27,7 +31,7 @@ export default function About() {
       try {
         setLoading(true); // Start loading
         const response = await axios.get(`${BASE_URL}about`);
-        setAboutData(response.data[0]); // Assume there's only one record
+        setAboutData(response.data); // Assume there's only one record
         setError(null);
       } catch (err: unknown) {
         if (err instanceof Error) {
@@ -44,11 +48,68 @@ export default function About() {
 
     fetchData();
   }, []);
+  const downloadCV = async () => {
+    //console.log("aboutData:", aboutData); // رؤية القيم قبل الشرط
+
+    // التحقق مما إذا كان `aboutData` متاحًا ولديه `cvPath`
+    if (!aboutData || !aboutData.cvPath) {
+      toast.error(" CV URL is missing or invalid!");
+      return;
+    }
+
+    const cvUrl = aboutData.cvPath;
+
+    try {
+      setLoadingCV(true);
+      console.log("📥 Fetching CV from:", cvUrl);
+      const response = await fetch(cvUrl);
+
+      if (!response.ok) {
+        throw new Error(
+          `❌ Failed to fetch CV: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "Ali_Hasan_CV.pdf";
+
+      document.body.appendChild(a);
+      a.click();
+
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      console.log("✅ CV Downloaded Successfully!");
+    } catch (error) {
+      console.error("❌ Error downloading CV:", error);
+    } finally {
+      setLoadingCV(false);
+    }
+  };
+
   return (
     <div className=" mx-auto min-h-screen">
-      <h1 className="text-3xl text-white font-bold mb-6 text-center">
-        About <span className="text-red-500"> Me</span>
-      </h1>
+      <div className="flex flex-col items-center  w-full justify-center">
+        <h1 className="text-3xl text-white font-bold mb-6 text-center">
+          About <span className="text-red-500"> Me</span>
+        </h1>
+        <button
+          onClick={downloadCV}
+          className="py-1 text-center mx-auto px-3 rounded border border-red-500"
+          disabled={loadingCV}
+        >
+          {loadingCV ? (
+            <Loader />
+          ) : (
+            <span className="flex items-center gap-3">
+              Download CV <FaDownload />
+            </span>
+          )}
+        </button>
+      </div>
       {/* Loading State */}
       {loading && <Loader />}
 

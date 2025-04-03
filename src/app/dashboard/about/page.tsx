@@ -5,24 +5,26 @@ import { useEffect, useState } from "react";
 import { BASE_URL } from "../../api";
 import { toast } from "sonner";
 interface AboutData {
-  image: string;
   name: string;
+  cv: File | null; // السيرة الذاتية يمكن أن تكون ملفًا أو null
+  image: string | File; // الصورة يمكن أن تكون رابطًا أو ملفًا
+  description: string;
   education: string;
-  profession: string;
-  phoneNo: string;
-  email: string;
   adress: string;
   date_of_birth: string;
-  description: string;
+  email: string;
+  phoneNo: string;
+  profession: string;
 }
 
 export default function About() {
   const [aboutData, setAboutData] = useState<AboutData | null>(null);
   const [loading, setLoading] = useState(true); // State للتحميل
   const [isEditing, setIsEditing] = useState(false); // State لوضع التعديل
-  const [newAboutData, setNewAboutData] = useState({
+  const [newAboutData, setNewAboutData] = useState<AboutData>({
     name: "",
-    image: "" as string | File, // تغيير نوع image ليقبل string أو File
+    cv: null, // قيمة افتراضية هي null
+    image: "", // قيمة افتراضية هي string فارغ
     description: "",
     education: "",
     adress: "",
@@ -34,45 +36,32 @@ export default function About() {
   const [error, setError] = useState<string | null>(null); // State للأخطاء
 
   // معالجة إرسال النموذج
-  const handleSubmit = async (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    const {
-      image,
-      name,
-      description,
-      education,
-      phoneNo,
-      email,
-      profession,
-      adress,
-      date_of_birth,
-    } = newAboutData;
-
-    if (!image) {
-      toast.warning("Please select an image.");
-      return;
-    }
 
     try {
       // Create FormData object
       const formData = new FormData();
-      formData.append("name", name); // Add title
-      formData.append("description", description); // Add description
-      formData.append("education", education); // Add description
-      formData.append("phoneNo", phoneNo); // Add description
-      formData.append("profession", profession); // Add description
-      formData.append("adress", adress); // Add description
-      formData.append("date_of_birth", date_of_birth); // Add description
-      formData.append("email", email); // Add description
+      formData.append("name", newAboutData.name);
+      formData.append("description", newAboutData.description);
+      formData.append("education", newAboutData.education);
+      formData.append("phoneNo", newAboutData.phoneNo);
+      formData.append("profession", newAboutData.profession);
+      formData.append("adress", newAboutData.adress);
+      formData.append("date_of_birth", newAboutData.date_of_birth);
+      formData.append("email", newAboutData.email);
 
-      // Check if the image is a Base64 string or a file
-      if (typeof image === "string") {
-        // If it's Base64, send it as a string
-        formData.append("image", image);
-      } else if (image instanceof File) {
-        // If it's a file, send it directly
-        formData.append("image", image);
+      // Handle CV (PDF file)
+      if (newAboutData.cv instanceof File) {
+        formData.append("cv", newAboutData.cv); // Add the CV file
+      }
+
+      // Handle image (Base64 or File)
+      if (typeof newAboutData.image === "string") {
+        formData.append("image", newAboutData.image); // Add Base64 string
+      } else if (newAboutData.image instanceof File) {
+        formData.append("image", newAboutData.image); // Add the image file
       } else {
         throw new Error("Invalid image format");
       }
@@ -80,7 +69,7 @@ export default function About() {
       // Send the request
       const response = await axios.post(`${BASE_URL}about`, formData, {
         headers: {
-          "Content-Type": "multipart/form-data", // Specify content type
+          "Content-Type": "multipart/form-data",
         },
       });
 
@@ -174,11 +163,36 @@ export default function About() {
                     type="file"
                     id="image"
                     name="image"
-                    accept="image/*"
+                    accept="image/*" // قم بتقييد الملفات إلى صور فقط
                     onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setNewAboutData((prev) => ({ ...prev, image: file }));
+                      const files = e.target.files;
+                      if (files && files.length > 0) {
+                        setNewAboutData((prev) => ({
+                          ...prev,
+                          image: files[0],
+                        })); // تحويل FileList إلى File
+                      }
+                    }}
+                    className="mt-1 text-white block w-full"
+                  />
+                </div>
+                {/* cv Upload */}
+                <div>
+                  <label
+                    htmlFor="image"
+                    className="block text-white text-sm font-medium"
+                  >
+                    Upload CV:
+                  </label>
+                  <input
+                    type="file"
+                    id="cv"
+                    name="cv"
+                    accept=".pdf" // قم بتقييد الملفات إلى PDF فقط
+                    onChange={(e) => {
+                      const files = e.target.files;
+                      if (files && files.length > 0) {
+                        setNewAboutData((prev) => ({ ...prev, cv: files[0] })); // تحويل FileList إلى File
                       }
                     }}
                     className="mt-1 text-white block w-full"
@@ -382,9 +396,13 @@ export default function About() {
             <div className="flex items-center justify-center mb-4">
               {aboutData.image && (
                 <img
-                  src={aboutData.image}
+                  src={
+                    typeof aboutData.image === "string"
+                      ? aboutData.image // إذا كان image string (رابط أو Base64)
+                      : URL.createObjectURL(aboutData.image) // إذا كان image File
+                  }
                   alt="Profile"
-                  className="w-40 h-40  object-cover"
+                  className="w-40 h-40 object-cover"
                 />
               )}
             </div>

@@ -24,14 +24,17 @@ const AboutSchema = new mongoose.Schema({
   adress: String,
   date_of_birth: String,
   description: String,
+  cvPath: String, // رابط السيرة الذاتية في Cloudinary
+  cvCloudinaryId: String, // معرف السيرة الذاتية في Cloudinary
 });
 
 let About;
+
 try {
   About = mongoose.model("About");
 } catch (error) {
   About = mongoose.model("About", AboutSchema);
-  console.log(error);
+  console.error(error);
 }
 
 // التأكد من الاتصال بقاعدة البيانات
@@ -52,11 +55,14 @@ export const config = {
   },
 };
 
-// دالة لرفع الصورة إلى Cloudinary
-const uploadToCloudinary = (buffer) => {
+// دالة لرفع الملف إلى Cloudinary
+const uploadToCloudinary = (buffer, resourceType = "image") => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { folder: "about_images" }, // يمكنك تغيير اسم المجلد
+      {
+        folder: resourceType === "image" ? "about_images" : "about_cvs",
+        resource_type: resourceType,
+      },
       (error, result) => {
         if (error) reject(error);
         else resolve(result.secure_url);
@@ -71,18 +77,21 @@ export default async function handler(req, res) {
 
   if (method === "GET") {
     try {
-      const about = await About.find();
-      res.status(200).json(about);
+      const about = await About.findOne();
+      res.status(200).json(about || {});
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
   } else if (method === "POST") {
-    upload.single("image")(req, res, async (err) => {
+    upload.fields([
+      { name: "image", maxCount: 1 },
+      { name: "cv", maxCount: 1 },
+    ])(req, res, async (err) => {
       if (err) {
-        return res.status(400).json({ message: "خطأ في رفع الصورة" });
+        return res.status(400).json({ message: "خطأ في رفع الملفات" });
       }
 
-      const { file } = req;
+      const { files, body } = req;
       const {
         name,
         description,
@@ -92,19 +101,26 @@ export default async function handler(req, res) {
         date_of_birth,
         adress,
         profession,
-      } = req.body;
+      } = body;
 
       try {
         let existingAbout = await About.findOne();
         let imageUrl = existingAbout?.image; // الاحتفاظ بالصورة القديمة في حالة عدم وجود صورة جديدة
+        let cvUrl = existingAbout?.cvPath; // الاحتفاظ بالسيرة الذاتية القديمة في حالة عدم وجود سيرة جديدة
 
-        if (file) {
-          imageUrl = await uploadToCloudinary(file.buffer); // رفع الصورة إلى Cloudinary
+        // رفع الصورة الجديدة إن وجدت
+        if (files?.image?.[0]) {
+          imageUrl = await uploadToCloudinary(files.image[0].buffer, "image");
+        }
+
+        // رفع السيرة الذاتية الجديدة إن وجدت
+        if (files?.cv?.[0]) {
+          cvUrl = await uploadToCloudinary(files.cv[0].buffer, "raw");
         }
 
         if (existingAbout) {
           // تعديل البيانات الحالية
-          existingAbout.image = imageUrl;
+          existingAbout.image = imageUrl || existingAbout.image;
           existingAbout.name = name || existingAbout.name;
           existingAbout.description = description || existingAbout.description;
           existingAbout.education = education || existingAbout.education;
@@ -114,6 +130,7 @@ export default async function handler(req, res) {
           existingAbout.date_of_birth =
             date_of_birth || existingAbout.date_of_birth;
           existingAbout.profession = profession || existingAbout.profession;
+          existingAbout.cvPath = cvUrl || existingAbout.cvPath;
 
           await existingAbout.save();
           res.status(200).json(existingAbout);
@@ -129,6 +146,7 @@ export default async function handler(req, res) {
             email,
             phoneNo,
             profession,
+            cvPath: cvUrl,
           });
           await newAbout.save();
           res.status(201).json(newAbout);
@@ -140,6 +158,23 @@ export default async function handler(req, res) {
     });
   } else if (method === "DELETE") {
     try {
+      const existingAbout = await About.findOne();
+      if (existingAbout) {
+        // حذف الصورة من Cloudinary إن وجدت
+        if (existingAbout.image) {
+          await cloudinary.uploader.destroy(
+            existingAbout.image.split("/").pop().split(".")[0]
+          );
+        }
+
+        // حذف السيرة الذاتية من Cloudinary إن وجدت
+        if (existingAbout.cvPath) {
+          await cloudinary.uploader.destroy(existingAbout.cvCloudinaryId, {
+            resource_type: "raw",
+          });
+        }
+      }
+
       await About.deleteMany();
       res.status(200).json({ message: "تم حذف جميع البيانات بنجاح" });
     } catch (err) {

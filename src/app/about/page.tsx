@@ -22,7 +22,6 @@ interface About {
 export default function About() {
   const [aboutData, setAboutData] = useState<About | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadingCV, setLoadingCV] = useState(true);
   const [error, setError] = useState<string | null>(null); // State للأخطاء
 
   // جلب البيانات من API
@@ -60,7 +59,6 @@ export default function About() {
     const cvUrl = aboutData.cvPath;
 
     try {
-      setLoadingCV(true);
       console.log("📥 Fetching CV from:", cvUrl);
       const response = await fetch(cvUrl);
 
@@ -86,7 +84,6 @@ export default function About() {
     } catch (error) {
       console.error("❌ Error downloading CV:", error);
     } finally {
-      setLoadingCV(false);
     }
   };
 

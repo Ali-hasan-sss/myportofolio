@@ -15,7 +15,7 @@ export default function ServiceCard({
     <div className="card1">
       <div className="card-container">
         <div className="card-face front-face">
-          <img src={image} alt="me" />
+          <img src={image} alt="me" className="w-full" />
           <h2 className="text-white">{title}</h2>
           <h3>{des}</h3>
         </div>

@@ -17,10 +17,9 @@ h3 {
   margin: 5px;
 }
 .card1 img {
-  width: 150px;
+  width: 100%;
   height: 150px;
   object-fit: cover;
-  border-radius: 20px;
 }
 .card-container {
   width: 100%;

@@ -23,7 +23,7 @@ export default function About() {
   const [aboutData, setAboutData] = useState<About | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingCV, setLoadingCV] = useState(false);
-  const [error, setError] = useState<string | null>(null); // State للأخطاء
+  const [error, setError] = useState<string | null>(null);
 
   // جلب البيانات من API
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function About() {
           setError("An unknown error occurred.");
         }
       } finally {
-        setLoading(false); // Stop loading
+        setLoading(false);
       }
     };
 
@@ -57,7 +57,7 @@ export default function About() {
     const cvUrl = aboutData.cvPath;
 
     try {
-      setLoadingCV(true); // ⬅️ تفعيل اللودينغ قبل بدء التحميل
+      setLoadingCV(true);
       console.log("📥 Fetching CV from:", cvUrl);
 
       const response = await fetch(cvUrl);
@@ -82,18 +82,18 @@ export default function About() {
       console.log("✅ CV Downloaded Successfully!");
       toast.success("✅ تم تحميل السيرة الذاتية بنجاح!", {
         position: "top-right",
-        style: { backgroundColor: "#4CAF50", color: "#fff", fontSize: "16px" }, // تخصيص الألوان
+        style: { backgroundColor: "#4CAF50", color: "#fff", fontSize: "16px" },
       });
     } catch (error) {
       console.error("❌ Error downloading CV:", error);
       toast.error("Failed to download CV.");
     } finally {
-      setLoadingCV(false); // ⬅️ إيقاف اللودينغ سواء نجح التحميل أم لا
+      setLoadingCV(false);
     }
   };
 
   return (
-    <div className=" mx-auto min-h-screen">
+    <div className=" mx-auto min-h-screen py-5">
       <div className="flex flex-col items-center  w-full justify-center">
         <h1 className="text-3xl text-white font-bold mb-6 text-center">
           About <span className="text-red-500"> Me</span>

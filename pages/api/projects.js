@@ -18,7 +18,9 @@ const ProjectsSchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
   imagePath: String, // رابط الصورة في Cloudinary
   cloudinaryId: String, // معرف الصورة في Cloudinary لحذفها لاحقًا
-  link: { type: String, required: true, trim: true },
+  projectUrl: { type: String, required: true, trim: true },
+  codeUrl: { type: String, required: true, trim: true },
+  link: { type: String, trim: true }, // حقل قديم للتوافق مع البيانات الموجودة
 });
 
 const Project =
@@ -39,6 +41,21 @@ export const config = {
 };
 
 export default async function handler(req, res) {
+  // Add CORS headers
+  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,DELETE,PATCH,POST,PUT");
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+  );
+
+  // Handle preflight request
+  if (req.method === "OPTIONS") {
+    res.status(200).end();
+    return;
+  }
+
   const { method } = req;
 
   // ✅ جلب جميع المشاريع
@@ -60,8 +77,8 @@ export default async function handler(req, res) {
           .json({ message: err.message || "Invalid file upload" });
       }
 
-      const { name, link } = req.body;
-      if (!name?.trim() || !link?.trim()) {
+      const { name, projectUrl, codeUrl } = req.body;
+      if (!name?.trim() || !projectUrl?.trim() || !codeUrl?.trim()) {
         return res.status(400).json({ message: "Missing required fields" });
       }
 
@@ -70,7 +87,9 @@ export default async function handler(req, res) {
           name: name.trim(),
           imagePath: req.file ? req.file.path : "", // رابط الصورة في Cloudinary
           cloudinaryId: req.file ? req.file.filename : "", // معرف الصورة في Cloudinary
-          link: link.trim(),
+          projectUrl: projectUrl.trim(),
+          codeUrl: codeUrl.trim(),
+          link: projectUrl.trim(), // تعيين الحقل القديم للتوافق
         });
 
         await newProject.save();
@@ -90,8 +109,8 @@ export default async function handler(req, res) {
           .json({ message: err.message || "Invalid file upload" });
       }
 
-      const { id, name, link } = req.body;
-      if (!id || !name?.trim() || !link?.trim()) {
+      const { id, name, projectUrl, codeUrl } = req.body;
+      if (!id || !name?.trim() || !projectUrl?.trim() || !codeUrl?.trim()) {
         return res.status(400).json({ message: "Invalid update data" });
       }
 
@@ -107,7 +126,9 @@ export default async function handler(req, res) {
         }
 
         project.name = name.trim();
-        project.link = link.trim();
+        project.projectUrl = projectUrl.trim();
+        project.codeUrl = codeUrl.trim();
+        project.link = projectUrl.trim(); // تعيين الحقل القديم للتوافق
         if (req.file) {
           project.imagePath = req.file.path;
           project.cloudinaryId = req.file.filename;

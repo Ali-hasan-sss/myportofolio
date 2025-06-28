@@ -9,7 +9,8 @@ import Loader from "@/components/loader";
 interface project {
   _id: string;
   name: string;
-  link: string;
+  projectUrl?: string;
+  codeUrl?: string;
   imagePath: string;
 }
 
@@ -36,8 +37,9 @@ export default function Mywork() {
           >
             <ServiceCard
               title={project.name}
-              link={project.link}
-              image={project.imagePath || "/default-image.jpg"} // تعيين صورة افتراضية عند غياب الصورة
+              image={project.imagePath || "/default-image.jpg"}
+              projectUrl={project.projectUrl}
+              codeUrl={project.codeUrl}
             />
           </motion.div>
         ))}

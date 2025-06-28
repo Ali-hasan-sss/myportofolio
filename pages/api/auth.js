@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 // Define the User model
 const UserSchema = new mongoose.Schema({
@@ -26,24 +28,63 @@ if (!mongoose.connection.readyState) {
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
-    const { username, password } = req.body;
+    const { Username, Password } = req.body;
+
+    if (!Username || !Password) {
+      return res.status(400).json({
+        success: false,
+        message: "اسم المستخدم وكلمة المرور مطلوبان",
+      });
+    }
 
     try {
-      const user = await User.findOne({
-        Username: username,
-        Password: password,
-      });
+      // البحث عن المستخدم
+      const user = await User.findOne({ Username });
 
-      if (user) {
-        const token = "your-secret-token"; // Replace with JWT or a secure token generator
-        res.status(200).json({ success: true, token });
-      } else {
-        res
-          .status(401)
-          .json({ success: false, message: "Invalid credentials" });
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: "بيانات غير صحيحة",
+        });
       }
+
+      // التحقق من كلمة المرور
+      const isPasswordValid = await bcrypt.compare(Password, user.Password);
+
+      if (!isPasswordValid) {
+        return res.status(401).json({
+          success: false,
+          message: "بيانات غير صحيحة",
+        });
+      }
+
+      // إنشاء JWT token
+      const token = jwt.sign(
+        {
+          userId: user._id,
+          username: user.Username,
+        },
+        process.env.JWT_SECRET || "your-secret-key",
+        { expiresIn: "24h" }
+      );
+
+      // تسجيل محاولة تسجيل الدخول الناجحة
+      console.log(`User ${user.Username} logged in successfully`);
+
+      res.status(200).json({
+        success: true,
+        token,
+        user: {
+          id: user._id,
+          username: user.Username,
+        },
+      });
     } catch (err) {
-      res.status(500).json({ success: false, message: err.message });
+      console.error("Login error:", err);
+      res.status(500).json({
+        success: false,
+        message: "حدث خطأ في الخادم",
+      });
     }
   } else {
     res.setHeader("Allow", ["POST"]);

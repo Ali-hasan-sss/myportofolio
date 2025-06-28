@@ -1,13 +1,30 @@
-// About.tsx
 "use client";
-import axios from "axios";
 import { useEffect, useState } from "react";
-import { BASE_URL } from "../../api";
+import axios from "axios";
 import { toast } from "sonner";
+import {
+  Edit,
+  Download,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  GraduationCap,
+  Briefcase,
+  Loader2,
+} from "lucide-react";
+import { BASE_URL } from "@/app/api";
+import Modal from "@/components/Modal";
+import { InputField, TextareaField, FileField } from "@/components/FormField";
+import Button from "@/components/Button";
+import apiClient from "@/utils/axios";
+
 interface AboutData {
+  _id?: string;
   name: string;
-  cv: File | null; // السيرة الذاتية يمكن أن تكون ملفًا أو null
-  image: string | File; // الصورة يمكن أن تكون رابطًا أو ملفًا
+  cvPath?: string;
+  image?: string;
   description: string;
   education: string;
   adress: string;
@@ -19,12 +36,11 @@ interface AboutData {
 
 export default function About() {
   const [aboutData, setAboutData] = useState<AboutData | null>(null);
-  const [loading, setLoading] = useState(true); // State للتحميل
-  const [isEditing, setIsEditing] = useState(false); // State لوضع التعديل
-  const [newAboutData, setNewAboutData] = useState<AboutData>({
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState<AboutData>({
     name: "",
-    cv: null, // قيمة افتراضية هي null
-    image: "", // قيمة افتراضية هي string فارغ
     description: "",
     education: "",
     adress: "",
@@ -33,408 +49,468 @@ export default function About() {
     phoneNo: "",
     profession: "",
   });
-  const [error, setError] = useState<string | null>(null); // State للأخطاء
+  const [errors, setErrors] = useState<Partial<AboutData>>({});
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedCV, setSelectedCV] = useState<File | null>(null);
 
-  // معالجة إرسال النموذج
+  // جلب البيانات
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      console.log("جاري جلب البيانات من:", `${BASE_URL}about`);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+      const response = await apiClient.get("about");
+
+      console.log("استجابة الخادم:", response.data);
+      const data = response.data;
+
+      if (data && Object.keys(data).length > 0) {
+        setAboutData(data);
+        setFormData({
+          name: data.name || "",
+          description: data.description || "",
+          education: data.education || "",
+          adress: data.adress || "",
+          date_of_birth: data.date_of_birth || "",
+          email: data.email || "",
+          phoneNo: data.phoneNo || "",
+          profession: data.profession || "",
+        });
+      } else {
+        console.log("لا توجد بيانات في الخادم");
+        setAboutData(null);
+      }
+    } catch (error: unknown) {
+      console.error("خطأ في جلب البيانات:", error);
+
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "ECONNABORTED"
+      ) {
+        toast.error("انتهت مهلة الاتصال. تحقق من اتصالك بالإنترنت");
+      } else if (error && typeof error === "object" && "response" in error) {
+        // خطأ من الخادم
+        toast.error(`خطأ في الخادم: ${(error as any).response.status}`);
+      } else if (error && typeof error === "object" && "request" in error) {
+        // خطأ في الاتصال
+        toast.error("فشل في الاتصال بالخادم. تحقق من أن الخادم يعمل");
+      } else {
+        // خطأ آخر
+        toast.error("حدث خطأ غير متوقع في جلب البيانات");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  // فتح المودال للتعديل
+  const handleEdit = () => {
+    if (aboutData) {
+      setFormData({
+        name: aboutData.name || "",
+        description: aboutData.description || "",
+        education: aboutData.education || "",
+        adress: aboutData.adress || "",
+        date_of_birth: aboutData.date_of_birth || "",
+        email: aboutData.email || "",
+        phoneNo: aboutData.phoneNo || "",
+        profession: aboutData.profession || "",
+      });
+    }
+    setSelectedImage(null);
+    setSelectedCV(null);
+    setErrors({});
+    setIsModalOpen(true);
+  };
+
+  // معالجة تغيير الحقول
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // مسح الخطأ عند الكتابة
+    if (errors[name as keyof AboutData]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  // معالجة تغيير الملفات
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "image" | "cv"
+  ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (type === "image") {
+        setSelectedImage(file);
+      } else {
+        setSelectedCV(file);
+      }
+    }
+  };
+
+  // التحقق من صحة البيانات
+  const validateForm = (): boolean => {
+    const newErrors: Partial<AboutData> = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = "الاسم مطلوب";
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = "البريد الإلكتروني مطلوب";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = "البريد الإلكتروني غير صحيح";
+    }
+
+    if (!formData.phoneNo.trim()) {
+      newErrors.phoneNo = "رقم الهاتف مطلوب";
+    }
+
+    if (!formData.profession.trim()) {
+      newErrors.profession = "المهنة مطلوبة";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // حفظ البيانات
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (!validateForm()) {
+      return;
+    }
+
     try {
-      // Create FormData object
-      const formData = new FormData();
-      formData.append("name", newAboutData.name);
-      formData.append("description", newAboutData.description);
-      formData.append("education", newAboutData.education);
-      formData.append("phoneNo", newAboutData.phoneNo);
-      formData.append("profession", newAboutData.profession);
-      formData.append("adress", newAboutData.adress);
-      formData.append("date_of_birth", newAboutData.date_of_birth);
-      formData.append("email", newAboutData.email);
+      setSaving(true);
+      const formDataToSend = new FormData();
 
-      // Handle CV (PDF file)
-      if (newAboutData.cv instanceof File) {
-        formData.append("cv", newAboutData.cv); // Add the CV file
+      // إضافة البيانات النصية
+      Object.keys(formData).forEach((key) => {
+        const value = formData[key as keyof AboutData];
+        if (value) {
+          formDataToSend.append(key, value as string);
+        }
+      });
+
+      // إضافة الملفات
+      if (selectedImage) {
+        formDataToSend.append("image", selectedImage);
+      }
+      if (selectedCV) {
+        formDataToSend.append("cv", selectedCV);
       }
 
-      // Handle image (Base64 or File)
-      if (typeof newAboutData.image === "string") {
-        formData.append("image", newAboutData.image); // Add Base64 string
-      } else if (newAboutData.image instanceof File) {
-        formData.append("image", newAboutData.image); // Add the image file
-      } else {
-        throw new Error("Invalid image format");
-      }
-
-      // Send the request
-      const response = await axios.post(`${BASE_URL}about`, formData, {
+      const response = await apiClient.post("about", formDataToSend, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
-      toast.success("Data saved successfully!");
-      setAboutData(response.data); // Update the about data
-      setIsEditing(false); // Exit edit mode
+      toast.success("تم حفظ البيانات بنجاح");
+      setAboutData(response.data);
+      setIsModalOpen(false);
+      await fetchData(); // إعادة جلب البيانات للتأكد من التحديث
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast.error("Failed to save data.");
-        console.error("Error saving data:", error.message);
-        setError(error.message || "Failed to save data");
+      console.error("خطأ في حفظ البيانات:", error);
+
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        error.code === "ECONNABORTED"
+      ) {
+        toast.error("انتهت مهلة الاتصال. تحقق من اتصالك بالإنترنت");
+      } else if (error && typeof error === "object" && "response" in error) {
+        toast.error(`خطأ في الخادم: ${(error as any).response.status}`);
+      } else if (error && typeof error === "object" && "request" in error) {
+        toast.error("فشل في الاتصال بالخادم. تحقق من أن الخادم يعمل");
       } else {
-        toast.error("Failed to save data.");
-        console.error("Unknown error occurred", error);
-        setError("An unknown error occurred.");
+        toast.error("حدث خطأ غير متوقع في حفظ البيانات");
       }
+    } finally {
+      setSaving(false);
     }
   };
 
-  // جلب البيانات من API
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true); // Start loading
-        const response = await axios.get(`${BASE_URL}about`);
-        setAboutData(response.data[0]); // Assume there's only one record
-        setError(null);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          console.error("Error fetching about data:", err.message);
-          setError(err.message || "Failed to fetch data");
-        } else {
-          console.error("Unknown error occurred");
-          setError("Unknown error occurred");
-        }
-      } finally {
-        setLoading(false); // Stop loading
-      }
-    };
+  // تحميل السيرة الذاتية
+  const handleDownloadCV = () => {
+    if (aboutData?.cvPath) {
+      window.open(aboutData.cvPath, "_blank");
+    }
+  };
 
-    fetchData();
-  }, []);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-4" />
+          <p className="text-gray-300">جاري تحميل البيانات...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className=" mx-auto p-4 ">
-      <button
-        onClick={() => setIsEditing(!isEditing)}
-        className={`bg-blue-500 py-2 px-4 rounded hover:bg-blue-400 ${
-          isEditing
-            ? "bg-red-500 hover:bg-red-400"
-            : "bg-blue-500 hover:bg-blue-400"
-        }`}
-      >
-        {isEditing ? " close" : "edit"}
-      </button>
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center py-8">
-          <p className="text-gray-600 text-lg">Loading...</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">معلومات شخصية</h1>
+          <p className="text-gray-400">
+            إدارة المعلومات الشخصية والبيانات الأساسية
+          </p>
         </div>
-      )}
+        <Button onClick={handleEdit} icon={<Edit className="w-4 h-4" />}>
+          تعديل البيانات
+        </Button>
+      </div>
 
-      {/* Error State */}
-      {error && (
-        <div className="text-center py-8 text-red-500">
-          <p>{error}</p>
-        </div>
-      )}
-      {isEditing && (
-        <div
-          className="fixed  "
-          style={{ overflowY: "auto", maxWidth: "700px" }}
-        >
-          <h1 className="text-2xl font-bold mb-4">Edit About Information</h1>
-          <form
-            onSubmit={handleSubmit}
-            className="bg-gray-900 text-white  shadow-md rounded-lg p-6 py-[20px] mt-4"
-          >
-            {" "}
-            <div className="flex items-center gap-4">
-              <div className="w-1/2">
-                {/* Image Upload */}
-                <div>
-                  <label
-                    htmlFor="image"
-                    className="block text-white text-sm font-medium"
-                  >
-                    Upload Image:
-                  </label>
-                  <input
-                    type="file"
-                    id="image"
-                    name="image"
-                    accept="image/*" // قم بتقييد الملفات إلى صور فقط
-                    onChange={(e) => {
-                      const files = e.target.files;
-                      if (files && files.length > 0) {
-                        setNewAboutData((prev) => ({
-                          ...prev,
-                          image: files[0],
-                        })); // تحويل FileList إلى File
-                      }
-                    }}
-                    className="mt-1 text-white block w-full"
+      {/* Data Display */}
+      {aboutData && (
+        <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Profile Image */}
+            <div className="lg:col-span-1">
+              <div className="text-center">
+                {aboutData.image ? (
+                  <img
+                    src={aboutData.image}
+                    alt="Profile"
+                    className="w-48 h-48 object-cover rounded-full mx-auto mb-4 border-4 border-gray-600"
                   />
-                </div>
-                {/* cv Upload */}
-                <div>
-                  <label
-                    htmlFor="image"
-                    className="block text-white text-sm font-medium"
-                  >
-                    Upload CV:
-                  </label>
-                  <input
-                    type="file"
-                    id="cv"
-                    name="cv"
-                    accept=".pdf" // قم بتقييد الملفات إلى PDF فقط
-                    onChange={(e) => {
-                      const files = e.target.files;
-                      if (files && files.length > 0) {
-                        setNewAboutData((prev) => ({ ...prev, cv: files[0] })); // تحويل FileList إلى File
-                      }
-                    }}
-                    className="mt-1 text-white block w-full"
-                  />
-                </div>
-
-                {/* Title Input */}
-                <div className="mt-4">
-                  <label htmlFor="name" className="block text-sm font-medium">
-                    name:
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    name="name"
-                    value={newAboutData.name}
-                    onChange={(e) =>
-                      setNewAboutData({ ...newAboutData, name: e.target.value })
-                    }
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-                <div className="mt-4">
-                  <label
-                    htmlFor="profession"
-                    className="block text-sm font-medium"
-                  >
-                    profession:
-                  </label>
-                  <input
-                    type="text"
-                    id="profession"
-                    name="profession"
-                    value={newAboutData.profession}
-                    onChange={(e) =>
-                      setNewAboutData({
-                        ...newAboutData,
-                        profession: e.target.value,
-                      })
-                    }
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-
-                <div className="mt-4">
-                  <label
-                    htmlFor="education"
-                    className="block text-sm font-medium"
-                  >
-                    education:
-                  </label>
-                  <input
-                    type="text"
-                    id="education"
-                    name="education"
-                    value={newAboutData.education}
-                    onChange={(e) =>
-                      setNewAboutData({
-                        ...newAboutData,
-                        education: e.target.value,
-                      })
-                    }
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-                <div className="mt-4">
-                  <label
-                    htmlFor="phoneNo"
-                    className="block text-sm font-medium"
-                  >
-                    phoneNo:
-                  </label>
-                  <input
-                    type="text"
-                    id="phoneNo"
-                    name="phoneNo"
-                    value={newAboutData.phoneNo}
-                    onChange={(e) =>
-                      setNewAboutData({
-                        ...newAboutData,
-                        phoneNo: e.target.value,
-                      })
-                    }
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
+                ) : (
+                  <div className="w-48 h-48 bg-gray-700 rounded-full mx-auto mb-4 flex items-center justify-center">
+                    <User className="w-16 h-16 text-gray-400" />
+                  </div>
+                )}
+                <h2 className="text-xl font-semibold text-white">
+                  {aboutData.name}
+                </h2>
+                <p className="text-gray-400">{aboutData.profession}</p>
               </div>
-              <div className="w-1/2">
-                <div>
-                  <div className="mt-4">
-                    <label
-                      htmlFor="email"
-                      className="block text-sm font-medium"
-                    >
-                      email:
-                    </label>
-                    <input
-                      type="text"
-                      id="email"
-                      name="email"
-                      value={newAboutData.email}
-                      onChange={(e) =>
-                        setNewAboutData({
-                          ...newAboutData,
-                          email: e.target.value,
-                        })
-                      }
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
-                  <div className="mt-4">
-                    <label
-                      htmlFor="adress"
-                      className="block text-sm font-medium"
-                    >
-                      adress:
-                    </label>
-                    <input
-                      type="text"
-                      id="adress"
-                      name="adress"
-                      value={newAboutData.adress}
-                      onChange={(e) =>
-                        setNewAboutData({
-                          ...newAboutData,
-                          adress: e.target.value,
-                        })
-                      }
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
-                  <div className="mt-4">
-                    <label
-                      htmlFor="date_of_birth"
-                      className="block text-sm font-medium"
-                    >
-                      date of birth:
-                    </label>
-                    <input
-                      type="text"
-                      id="date_of_birth"
-                      name="date_of_birth"
-                      value={newAboutData.date_of_birth}
-                      onChange={(e) =>
-                        setNewAboutData({
-                          ...newAboutData,
-                          date_of_birth: e.target.value,
-                        })
-                      }
-                      className="w-full p-2 border rounded"
-                    />
-                  </div>
+            </div>
 
-                  {/* Description Input */}
-                  <div className="mt-4">
-                    <label
-                      htmlFor="description"
-                      className="block text-sm font-medium"
-                    >
-                      Description:
-                    </label>
-                    <textarea
-                      id="description"
-                      name="description"
-                      value={newAboutData.description}
-                      onChange={(e) =>
-                        setNewAboutData({
-                          ...newAboutData,
-                          description: e.target.value,
-                        })
-                      }
-                      className="w-full text-black p-2 border rounded"
-                    />
+            {/* Information */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg">
+                  <Mail className="w-5 h-5 text-blue-400" />
+                  <div>
+                    <p className="text-sm text-gray-400">البريد الإلكتروني</p>
+                    <p className="text-white">{aboutData.email}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg">
+                  <Phone className="w-5 h-5 text-green-400" />
+                  <div>
+                    <p className="text-sm text-gray-400">رقم الهاتف</p>
+                    <p className="text-white">{aboutData.phoneNo}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg">
+                  <MapPin className="w-5 h-5 text-red-400" />
+                  <div>
+                    <p className="text-sm text-gray-400">العنوان</p>
+                    <p className="text-white">{aboutData.adress}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg">
+                  <Calendar className="w-5 h-5 text-purple-400" />
+                  <div>
+                    <p className="text-sm text-gray-400">تاريخ الميلاد</p>
+                    <p className="text-white">{aboutData.date_of_birth}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg">
+                  <GraduationCap className="w-5 h-5 text-yellow-400" />
+                  <div>
+                    <p className="text-sm text-gray-400">التعليم</p>
+                    <p className="text-white">{aboutData.education}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-3 bg-gray-700 rounded-lg">
+                  <Briefcase className="w-5 h-5 text-indigo-400" />
+                  <div>
+                    <p className="text-sm text-gray-400">المهنة</p>
+                    <p className="text-white">{aboutData.profession}</p>
                   </div>
                 </div>
               </div>
-            </div>
-            {/* Submit and Cancel Buttons */}
-            <div className="flex justify-end mt-4 space-x-2">
-              <button
-                type="submit"
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                Save Changes
-              </button>
-              <button
-                onClick={() => setIsEditing(false)}
-                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-      {/* Data Display or Edit Form */}
-      {!loading && !error && aboutData && (
-        <>
-          <section className=" shadow-md rounded-lg bg-gray-800 p-6 text-white mt-4">
-            {/* Display Image */}
-            <div className="flex items-center justify-center mb-4">
-              {aboutData.image && (
-                <img
-                  src={
-                    typeof aboutData.image === "string"
-                      ? aboutData.image // إذا كان image string (رابط أو Base64)
-                      : URL.createObjectURL(aboutData.image) // إذا كان image File
-                  }
-                  alt="Profile"
-                  className="w-40 h-40 object-cover"
-                />
+
+              {/* Description */}
+              {aboutData.description && (
+                <div className="p-4 bg-gray-700 rounded-lg">
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    نبذة عني
+                  </h3>
+                  <p className="text-gray-300 leading-relaxed">
+                    {aboutData.description}
+                  </p>
+                </div>
+              )}
+
+              {/* CV Download */}
+              {aboutData.cvPath && (
+                <div className="flex justify-center">
+                  <Button
+                    onClick={handleDownloadCV}
+                    variant="success"
+                    icon={<Download className="w-4 h-4" />}
+                  >
+                    تحميل السيرة الذاتية
+                  </Button>
+                </div>
               )}
             </div>
-            <div className="flex flex-col items-senter justify-center w-full">
-              <h1 className="text-2xl text-center font-bold mb-2">
-                {aboutData.name}
-              </h1>
-              <h2 className="text-xl text-center ">{aboutData.profession}</h2>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="تعديل المعلومات الشخصية"
+        size="lg"
+        loading={saving}
+      >
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Personal Information */}
+            <div className="space-y-4">
+              <InputField
+                label="الاسم الكامل"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="أدخل اسمك الكامل"
+                required
+                error={errors.name}
+              />
+
+              <InputField
+                label="المهنة"
+                name="profession"
+                value={formData.profession}
+                onChange={handleInputChange}
+                placeholder="أدخل مهنتك"
+                required
+                error={errors.profession}
+              />
+
+              <InputField
+                label="البريد الإلكتروني"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                placeholder="أدخل بريدك الإلكتروني"
+                required
+                error={errors.email}
+              />
+
+              <InputField
+                label="رقم الهاتف"
+                name="phoneNo"
+                value={formData.phoneNo}
+                onChange={handleInputChange}
+                placeholder="أدخل رقم هاتفك"
+                required
+                error={errors.phoneNo}
+              />
             </div>
 
-            {/* Display Description */}
-            <h2 className="text-lg font-bold ">
-              education: {aboutData.education}
-            </h2>
-            <p>phoneNo: {aboutData.phoneNo}</p>
-            <p>email: {aboutData.email}</p>
-            <p>date of birth: {aboutData.date_of_birth}</p>
-            <p>description: {aboutData.description}</p>
+            {/* Additional Information */}
+            <div className="space-y-4">
+              <InputField
+                label="العنوان"
+                name="adress"
+                value={formData.adress}
+                onChange={handleInputChange}
+                placeholder="أدخل عنوانك"
+                error={errors.adress}
+              />
 
-            {/* Edit Button */}
-            <button
-              onClick={() => {
-                setIsEditing(true);
-                setNewAboutData(aboutData); // Populate the form with current data
-              }}
-              className="mt-4 bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+              <InputField
+                label="تاريخ الميلاد"
+                name="date_of_birth"
+                value={formData.date_of_birth}
+                onChange={handleInputChange}
+                placeholder="أدخل تاريخ ميلادك"
+                error={errors.date_of_birth}
+              />
+
+              <InputField
+                label="التعليم"
+                name="education"
+                value={formData.education}
+                onChange={handleInputChange}
+                placeholder="أدخل مؤهلك التعليمي"
+                error={errors.education}
+              />
+            </div>
+          </div>
+
+          {/* Description */}
+          <TextareaField
+            label="نبذة عني"
+            name="description"
+            value={formData.description}
+            onChange={handleInputChange}
+            placeholder="اكتب نبذة مختصرة عن نفسك وخبراتك"
+            rows={4}
+            error={errors.description}
+          />
+
+          {/* File Uploads */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <FileField
+              label="الصورة الشخصية"
+              name="image"
+              accept="image/*"
+              onChange={(e) => handleFileChange(e, "image")}
+            />
+
+            <FileField
+              label="السيرة الذاتية (PDF)"
+              name="cv"
+              accept=".pdf"
+              onChange={(e) => handleFileChange(e, "cv")}
+            />
+          </div>
+
+          {/* Form Actions */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-700">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setIsModalOpen(false)}
+              disabled={saving}
             >
-              Edit
-            </button>
-          </section>
-        </>
-      )}
+              إلغاء
+            </Button>
+            <Button type="submit" loading={saving} disabled={saving}>
+              حفظ التغييرات
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }
